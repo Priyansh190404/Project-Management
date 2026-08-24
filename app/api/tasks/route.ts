@@ -3,18 +3,21 @@ import { prisma } from "../../lib/prisma";
 
 export async function GET() {
   try {
-    const projects = await prisma.project.findMany({
+    const tasks = await prisma.task.findMany({
       orderBy: {
         createdAt: "desc",
       },
+      include: {
+        project: true,
+      },
     });
 
-    return NextResponse.json(projects);
+    return NextResponse.json(tasks);
   } catch (error) {
-    console.error("Failed to fetch projects:", error);
+    console.error("Failed to fetch tasks:", error);
 
     return NextResponse.json(
-      { error: "Failed to fetch projects" },
+      { error: "Failed to fetch tasks" },
       { status: 500 }
     );
   }
@@ -24,30 +27,45 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    const { name, description } = body;
+    const {
+      title,
+      description,
+      projectId,
+    } = body;
 
-    if (!name?.trim()) {
+    if (!title?.trim()) {
       return NextResponse.json(
-        { error: "Project name is required" },
+        { error: "Task title is required" },
         { status: 400 }
       );
     }
 
-    const project = await prisma.project.create({
+    if (!projectId) {
+      return NextResponse.json(
+        { error: "Project is required" },
+        { status: 400 }
+      );
+    }
+
+    const task = await prisma.task.create({
       data: {
-        name: name.trim(),
+        title: title.trim(),
         description:
           description?.trim() || "No description provided.",
+        projectId: Number(projectId),
+      },
+      include: {
+        project: true,
       },
     });
 
-    return NextResponse.json(project, { status: 201 });
+    return NextResponse.json(task, { status: 201 });
   } catch (error) {
-    console.error("Failed to create project:", error);
+    console.error("Failed to create task:", error);
 
     return NextResponse.json(
       {
-        error: "Failed to create project",
+        error: "Failed to create task",
         details: String(error),
       },
       { status: 500 }
@@ -61,46 +79,56 @@ export async function PUT(request: Request) {
 
     const {
       id,
-      name,
+      title,
       description,
-      progress,
       status,
+      projectId,
     } = body;
 
     if (!id) {
       return NextResponse.json(
-        { error: "Project id is required" },
+        { error: "Task id is required" },
         { status: 400 }
       );
     }
 
-    if (!name?.trim()) {
+    if (!title?.trim()) {
       return NextResponse.json(
-        { error: "Project name is required" },
+        { error: "Task title is required" },
         { status: 400 }
       );
     }
 
-    const project = await prisma.project.update({
+    if (!projectId) {
+      return NextResponse.json(
+        { error: "Project is required" },
+        { status: 400 }
+      );
+    }
+
+    const task = await prisma.task.update({
       where: {
         id: Number(id),
       },
       data: {
-        name: name.trim(),
+        title: title.trim(),
         description:
           description?.trim() || "No description provided.",
-        progress: Number(progress),
-        status: status,
+        status: status || "To Do",
+        projectId: Number(projectId),
+      },
+      include: {
+        project: true,
       },
     });
 
-    return NextResponse.json(project);
+    return NextResponse.json(task);
   } catch (error) {
-    console.error("Failed to update project:", error);
+    console.error("Failed to update task:", error);
 
     return NextResponse.json(
       {
-        error: "Failed to update project",
+        error: "Failed to update task",
         details: String(error),
       },
       { status: 500 }
@@ -114,26 +142,26 @@ export async function DELETE(request: Request) {
 
     if (!id) {
       return NextResponse.json(
-        { error: "Project id is required" },
+        { error: "Task id is required" },
         { status: 400 }
       );
     }
 
-    await prisma.project.delete({
+    await prisma.task.delete({
       where: {
         id: Number(id),
       },
     });
 
     return NextResponse.json({
-      message: "Project deleted successfully",
+      message: "Task deleted successfully",
     });
   } catch (error) {
-    console.error("Failed to delete project:", error);
+    console.error("Failed to delete task:", error);
 
     return NextResponse.json(
       {
-        error: "Failed to delete project",
+        error: "Failed to delete task",
         details: String(error),
       },
       { status: 500 }

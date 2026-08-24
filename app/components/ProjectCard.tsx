@@ -1,4 +1,5 @@
 "use client";
+
 type ProjectCardProps = {
   id: number;
   name: string;
@@ -6,6 +7,7 @@ type ProjectCardProps = {
   progress: number;
   status: "In Progress" | "Completed";
   onDelete: (id: number) => void;
+  onEdit: (id: number) => void;
 };
 
 export default function ProjectCard({
@@ -15,6 +17,7 @@ export default function ProjectCard({
   progress,
   status,
   onDelete,
+  onEdit,
 }: ProjectCardProps) {
   return (
     <div className="rounded-xl bg-white p-6 shadow-sm">
@@ -54,12 +57,21 @@ export default function ProjectCard({
           {status}
         </span>
 
-        <button
-          onClick={() => onDelete(id)}
-          className="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
-        >
-          Delete
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => onEdit(id)}
+            className="rounded-lg px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50"
+          >
+            Edit
+          </button>
+
+          <button
+            onClick={() => onDelete(id)}
+            className="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+          >
+            Delete
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -14,4 +14,17 @@ model Project {
   progress    Int      @default(0)
   status      String   @default("In Progress")
   createdAt   DateTime @default(now())
+
+  tasks       Task[]
+}
+
+model Task {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  status      String   @default("To Do")
+  createdAt   DateTime @default(now())
+
+  projectId   Int
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
