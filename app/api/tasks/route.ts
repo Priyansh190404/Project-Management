@@ -46,6 +46,18 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+    const project = await prisma.project.findUnique({
+  where: {
+    id: Number(projectId),
+  },
+});
+
+if (!project) {
+  return NextResponse.json(
+    { error: "Selected project does not exist" },
+    { status: 404 }
+  );
+}
 
     const task = await prisma.task.create({
       data: {
@@ -105,6 +117,18 @@ export async function PUT(request: Request) {
         { status: 400 }
       );
     }
+    const project = await prisma.project.findUnique({
+  where: {
+    id: Number(projectId),
+  },
+});
+
+if (!project) {
+  return NextResponse.json(
+    { error: "Selected project does not exist" },
+    { status: 404 }
+  );
+}
 
     const task = await prisma.task.update({
       where: {
