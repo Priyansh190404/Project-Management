@@ -1,9 +1,28 @@
 import { NextResponse } from "next/server";
+import { auth } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
 
-export async function GET() {
+async function getSession(request: Request) {
+  return await auth.api.getSession({
+    headers: request.headers,
+  });
+}
+
+export async function GET(request: Request) {
   try {
+    const session = await getSession(request);
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const projects = await prisma.project.findMany({
+      where: {
+        userId: session.user.id,
+      },
       orderBy: {
         createdAt: "desc",
       },
@@ -22,8 +41,16 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const session = await getSession(request);
 
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
     const { name, description } = body;
 
     if (!name?.trim()) {
@@ -38,6 +65,7 @@ export async function POST(request: Request) {
         name: name.trim(),
         description:
           description?.trim() || "No description provided.",
+        userId: session.user.id,
       },
     });
 
@@ -57,6 +85,15 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const session = await getSession(request);
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
     const {
@@ -81,6 +118,20 @@ export async function PUT(request: Request) {
       );
     }
 
+    const existingProject = await prisma.project.findFirst({
+      where: {
+        id: Number(id),
+        userId: session.user.id,
+      },
+    });
+
+    if (!existingProject) {
+      return NextResponse.json(
+        { error: "Project not found" },
+        { status: 404 }
+      );
+    }
+
     const project = await prisma.project.update({
       where: {
         id: Number(id),
@@ -90,7 +141,7 @@ export async function PUT(request: Request) {
         description:
           description?.trim() || "No description provided.",
         progress: Number(progress),
-        status: status,
+        status: status || "In Progress",
       },
     });
 
@@ -110,12 +161,35 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const session = await getSession(request);
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const { id } = await request.json();
 
     if (!id) {
       return NextResponse.json(
         { error: "Project id is required" },
         { status: 400 }
+      );
+    }
+
+    const existingProject = await prisma.project.findFirst({
+      where: {
+        id: Number(id),
+        userId: session.user.id,
+      },
+    });
+
+    if (!existingProject) {
+      return NextResponse.json(
+        { error: "Project not found" },
+        { status: 404 }
       );
     }
 

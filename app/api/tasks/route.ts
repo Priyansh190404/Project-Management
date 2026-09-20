@@ -1,9 +1,30 @@
 import { NextResponse } from "next/server";
+import { auth } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
 
-export async function GET() {
+async function getSession(request: Request) {
+  return await auth.api.getSession({
+    headers: request.headers,
+  });
+}
+
+export async function GET(request: Request) {
   try {
+    const session = await getSession(request);
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const tasks = await prisma.task.findMany({
+      where: {
+        project: {
+          userId: session.user.id,
+        },
+      },
       orderBy: {
         createdAt: "desc",
       },
@@ -25,6 +46,15 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const session = await getSession(request);
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
     const {
@@ -46,18 +76,20 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    const project = await prisma.project.findUnique({
-  where: {
-    id: Number(projectId),
-  },
-});
 
-if (!project) {
-  return NextResponse.json(
-    { error: "Selected project does not exist" },
-    { status: 404 }
-  );
-}
+    const project = await prisma.project.findFirst({
+      where: {
+        id: Number(projectId),
+        userId: session.user.id,
+      },
+    });
+
+    if (!project) {
+      return NextResponse.json(
+        { error: "Selected project does not exist" },
+        { status: 404 }
+      );
+    }
 
     const task = await prisma.task.create({
       data: {
@@ -87,6 +119,15 @@ if (!project) {
 
 export async function PUT(request: Request) {
   try {
+    const session = await getSession(request);
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
     const {
@@ -117,18 +158,38 @@ export async function PUT(request: Request) {
         { status: 400 }
       );
     }
-    const project = await prisma.project.findUnique({
-  where: {
-    id: Number(projectId),
-  },
-});
 
-if (!project) {
-  return NextResponse.json(
-    { error: "Selected project does not exist" },
-    { status: 404 }
-  );
-}
+    // Verify the existing task belongs to the logged-in user.
+    const existingTask = await prisma.task.findFirst({
+      where: {
+        id: Number(id),
+        project: {
+          userId: session.user.id,
+        },
+      },
+    });
+
+    if (!existingTask) {
+      return NextResponse.json(
+        { error: "Task not found" },
+        { status: 404 }
+      );
+    }
+
+    // Verify the new project also belongs to the logged-in user.
+    const project = await prisma.project.findFirst({
+      where: {
+        id: Number(projectId),
+        userId: session.user.id,
+      },
+    });
+
+    if (!project) {
+      return NextResponse.json(
+        { error: "Selected project does not exist" },
+        { status: 404 }
+      );
+    }
 
     const task = await prisma.task.update({
       where: {
@@ -162,12 +223,38 @@ if (!project) {
 
 export async function DELETE(request: Request) {
   try {
+    const session = await getSession(request);
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const { id } = await request.json();
 
     if (!id) {
       return NextResponse.json(
         { error: "Task id is required" },
         { status: 400 }
+      );
+    }
+
+    // Only allow deletion of a task belonging to the logged-in user.
+    const existingTask = await prisma.task.findFirst({
+      where: {
+        id: Number(id),
+        project: {
+          userId: session.user.id,
+        },
+      },
+    });
+
+    if (!existingTask) {
+      return NextResponse.json(
+        { error: "Task not found" },
+        { status: 404 }
       );
     }
 

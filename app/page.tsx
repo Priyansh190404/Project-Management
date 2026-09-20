@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { authClient } from "./lib/auth-client";
 import StatCard from "./components/StatCard";
 import ProjectCard from "./components/ProjectCard";
+import SignOutButton from "./components/SignOutButton";
 
 type Project = {
   id: number;
@@ -14,10 +18,23 @@ type Project = {
 };
 
 export default function Home() {
+  const router = useRouter();
+
+  const { data: session, isPending } =
+    authClient.useSession();
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+useEffect(() => {
+  if (isPending) {
+    return;
+  }
 
-  useEffect(() => {
+  if (!session?.user) {
+    router.replace("/sign-in");
+    return;
+  }
+
   fetchProjects();
 
   const handleFocus = () => {
@@ -29,7 +46,7 @@ export default function Home() {
   return () => {
     window.removeEventListener("focus", handleFocus);
   };
-}, []);
+}, [isPending, session, router]);
 
   async function fetchProjects() {
     try {
@@ -50,6 +67,19 @@ export default function Home() {
       setLoading(false);
     }
   }
+  if (isPending) {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-gray-100">
+      <p className="text-gray-500">
+        Checking authentication...
+      </p>
+    </main>
+  );
+}
+
+if (!session?.user) {
+  return null;
+}
 
   return (
     <main className="min-h-screen bg-gray-100">
@@ -68,28 +98,28 @@ export default function Home() {
         <nav className="mt-6 px-4">
 
           {/* Dashboard */}
-          <a
-            href="/"
-            className="mb-2 block rounded-lg bg-gray-800 px-4 py-3 font-medium text-white"
-          >
-            Dashboard
-          </a>
+         <Link
+  href="/"
+  className="mb-2 block rounded-lg bg-gray-800 px-4 py-3 font-medium text-white"
+>
+  Dashboard
+</Link>
 
           {/* Projects */}
-          <a
-            href="/projects"
-            className="mb-2 block rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white"
-          >
-            Projects
-          </a>
+          <Link
+  href="/projects"
+  className="mb-2 block rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white"
+>
+  Projects
+</Link>
 
           {/* Tasks */}
-          <a
-            href="/tasks"
-            className="mb-2 block rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white"
-          >
-            Tasks
-          </a>
+         <Link
+  href="/tasks"
+  className="mb-2 block rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white"
+>
+  Tasks
+</Link>
 
           {/* Team */}
           <a
@@ -109,16 +139,20 @@ export default function Home() {
 
         </nav>
 
-        {/* User section */}
-        <div className="absolute bottom-0 w-full border-t border-gray-800 p-5">
-          <p className="font-medium">
-            Priyansh
-          </p>
+      {/* User section */}
+<div className="absolute bottom-0 w-full border-t border-gray-800 p-5">
+  <p className="font-medium">
+  {session.user.name || session.user.email}
+</p>
 
-          <p className="text-sm text-gray-400">
-            Software Developer
-          </p>
-        </div>
+  <p className="text-sm text-gray-400">
+    Software Developer
+  </p>
+
+  <div className="mt-4">
+    <SignOutButton />
+  </div>
+</div>
 
       </aside>
 
@@ -134,7 +168,7 @@ export default function Home() {
             </h2>
 
             <p className="text-sm text-gray-500">
-              Welcome back to TaskFlow
+              Welcome back, {session.user.name || session.user.email}
             </p>
           </div>
 

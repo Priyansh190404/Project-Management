@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { authClient } from "../lib/auth-client";
+import Sidebar from "../components/Sidebar";
+
 
 type Project = {
   id: number;
@@ -18,6 +22,11 @@ type Task = {
 };
 
 export default function TasksPage() {
+  const router = useRouter();
+
+  const { data: session, isPending } =
+    authClient.useSession();
+
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
 
@@ -31,10 +40,18 @@ export default function TasksPage() {
 
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+ useEffect(() => {
+  if (isPending) {
+    return;
+  }
 
+  if (!session?.user) {
+    router.replace("/sign-in");
+    return;
+  }
+
+  fetchData();
+}, [isPending, session, router]);
   async function fetchData() {
     try {
       const projectsResponse = await fetch("/api/projects", {
@@ -255,9 +272,24 @@ export default function TasksPage() {
       alert("Failed to delete task.");
     }
   }
+if (isPending) {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-gray-100">
+      <p className="text-gray-500">
+        Checking authentication...
+      </p>
+    </main>
+  );
+}
 
+if (!session?.user) {
+  return null;
+}
   return (
     <main className="min-h-screen bg-gray-100">
+  <Sidebar />
+
+  <div className="ml-64 min-h-screen">
 
       {/* Header */}
       <header className="flex items-center justify-between border-b bg-white px-8 py-5">
@@ -273,7 +305,7 @@ export default function TasksPage() {
 
         <button
           onClick={openCreateModal}
-          className="rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700"
+          className="rounded-lg bg-gray-900 px-5 py-3 font-semibold text-white hover:bg-blue-700"
         >
           + New Task
         </button>
@@ -490,8 +522,9 @@ export default function TasksPage() {
           </div>
 
         </div>
+   
       )}
-
-    </main>
+    </div>
+  </main>
   );
 }
