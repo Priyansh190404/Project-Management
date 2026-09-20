@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { authClient } from "./lib/auth-client";
 import StatCard from "./components/StatCard";
 import ProjectCard from "./components/ProjectCard";
-import SignOutButton from "./components/SignOutButton";
+import Sidebar from "./components/Sidebar";
 
 type Project = {
   id: number;
@@ -17,174 +16,121 @@ type Project = {
   createdAt: string;
 };
 
+type Task = {
+  id: number;
+  title: string;
+  description: string;
+  status: string;
+  projectId: number;
+  createdAt: string;
+};
+
 export default function Home() {
   const router = useRouter();
 
-  const { data: session, isPending } =
-    authClient.useSession();
+  const { data: session, isPending } = authClient.useSession();
 
   const [projects, setProjects] = useState<Project[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-useEffect(() => {
-  if (isPending) {
-    return;
-  }
 
-  if (!session?.user) {
-    router.replace("/sign-in");
-    return;
-  }
+  useEffect(() => {
+    if (isPending) {
+      return;
+    }
 
-  fetchProjects();
+    if (!session?.user) {
+      router.replace("/sign-in");
+      return;
+    }
 
-  const handleFocus = () => {
-    fetchProjects();
-  };
+    fetchDashboardData();
 
-  window.addEventListener("focus", handleFocus);
+    const handleFocus = () => {
+      fetchDashboardData();
+    };
 
-  return () => {
-    window.removeEventListener("focus", handleFocus);
-  };
-}, [isPending, session, router]);
+    window.addEventListener("focus", handleFocus);
 
-  async function fetchProjects() {
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [isPending, session, router]);
+
+  async function fetchDashboardData() {
     try {
-      const response = await fetch("/api/projects", {
-        cache: "no-store",
-      });
+      const [projectsResponse, tasksResponse] = await Promise.all([
+        fetch("/api/projects", {
+          cache: "no-store",
+        }),
+        fetch("/api/tasks", {
+          cache: "no-store",
+        }),
+      ]);
 
-      if (!response.ok) {
+      if (!projectsResponse.ok) {
         throw new Error("Failed to fetch projects");
       }
 
-      const data = await response.json();
+      if (!tasksResponse.ok) {
+        throw new Error("Failed to fetch tasks");
+      }
 
-      setProjects(data);
+      const projectsData = await projectsResponse.json();
+      const tasksData = await tasksResponse.json();
+
+      setProjects(projectsData);
+      setTasks(tasksData);
     } catch (error) {
-      console.error("Error loading projects:", error);
+      console.error("Error loading dashboard data:", error);
     } finally {
       setLoading(false);
     }
   }
-  if (isPending) {
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-100">
-      <p className="text-gray-500">
-        Checking authentication...
-      </p>
-    </main>
-  );
-}
 
-if (!session?.user) {
-  return null;
-}
+  if (isPending) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-gray-100">
+        <p className="text-gray-500">
+          Checking authentication...
+        </p>
+      </main>
+    );
+  }
+
+  if (!session?.user) {
+    return null;
+  }
 
   return (
     <main className="min-h-screen bg-gray-100">
-
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-screen w-64 bg-gray-900 text-white">
-
-        {/* Logo */}
-        <div className="flex h-20 items-center border-b border-gray-800 px-6">
-          <h1 className="text-2xl font-bold">
-            TaskFlow
-          </h1>
-        </div>
-
-        {/* Navigation */}
-        <nav className="mt-6 px-4">
-
-          {/* Dashboard */}
-         <Link
-  href="/"
-  className="mb-2 block rounded-lg bg-gray-800 px-4 py-3 font-medium text-white"
->
-  Dashboard
-</Link>
-
-          {/* Projects */}
-          <Link
-  href="/projects"
-  className="mb-2 block rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white"
->
-  Projects
-</Link>
-
-          {/* Tasks */}
-         <Link
-  href="/tasks"
-  className="mb-2 block rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white"
->
-  Tasks
-</Link>
-
-          {/* Team */}
-          <a
-            href="#"
-            className="mb-2 block rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white"
-          >
-            Team
-          </a>
-
-          {/* Settings */}
-          <a
-            href="#"
-            className="mb-2 block rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white"
-          >
-            Settings
-          </a>
-
-        </nav>
-
-      {/* User section */}
-<div className="absolute bottom-0 w-full border-t border-gray-800 p-5">
-  <p className="font-medium">
-  {session.user.name || session.user.email}
-</p>
-
-  <p className="text-sm text-gray-400">
-    Software Developer
-  </p>
-
-  <div className="mt-4">
-    <SignOutButton />
-  </div>
-</div>
-
-      </aside>
+      <Sidebar />
 
       {/* Main area */}
       <div className="ml-64 min-h-screen">
-
         {/* Top bar */}
         <header className="flex h-20 items-center justify-between border-b bg-white px-8">
-
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
               Dashboard
             </h2>
 
             <p className="text-sm text-gray-500">
-              Welcome back, {session.user.name || session.user.email}
+              Welcome back,{" "}
+              {session.user.name || session.user.email}
             </p>
           </div>
 
-          {/* New Project */}
           <a
             href="/projects?new=true"
             className="rounded-lg bg-gray-900 px-5 py-2.5 font-medium text-white hover:bg-gray-800"
           >
             + New Project
           </a>
-
         </header>
 
         {/* Main content */}
         <section className="p-10">
-
           <h2 className="text-4xl font-bold text-gray-900">
             Manage your projects and tasks.
           </h2>
@@ -195,7 +141,6 @@ if (!session?.user) {
 
           {/* Statistics */}
           <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-
             <StatCard
               title="Projects"
               value={projects.length}
@@ -203,14 +148,15 @@ if (!session?.user) {
 
             <StatCard
               title="Tasks"
-              value={24}
+              value={tasks.length}
             />
 
             <StatCard
               title="In Progress"
               value={
                 projects.filter(
-                  (project) => project.status === "In Progress"
+                  (project) =>
+                    project.status === "In Progress"
                 ).length
               }
             />
@@ -219,60 +165,48 @@ if (!session?.user) {
               title="Completed"
               value={
                 projects.filter(
-                  (project) => project.status === "Completed"
+                  (project) =>
+                    project.status === "Completed"
                 ).length
               }
             />
-
           </div>
 
           {/* Recent Projects */}
           <div className="mt-10">
-
             <div className="flex items-center justify-between">
-
               <h3 className="text-2xl font-bold text-gray-900">
                 Recent Projects
               </h3>
 
-              {/* View All */}
               <a
                 href="/projects"
                 className="font-medium text-gray-700 hover:text-gray-900"
               >
                 View all →
               </a>
-
             </div>
 
-            {/* Projects */}
             {loading ? (
-
               <p className="mt-5 text-gray-500">
                 Loading projects...
               </p>
-
             ) : projects.length === 0 ? (
-
               <div className="mt-5 rounded-xl bg-white p-8 shadow">
                 <p className="text-gray-500">
                   No projects yet.
                 </p>
 
                 <a
-                  href="/projects"
+                  href="/projects?new=true"
                   className="mt-4 inline-block rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
                 >
                   Create your first project
                 </a>
               </div>
-
             ) : (
-
               <div className="mt-5 grid gap-6 md:grid-cols-2">
-
                 {projects.slice(0, 2).map((project) => (
-
                   <ProjectCard
                     key={project.id}
                     id={project.id}
@@ -281,19 +215,12 @@ if (!session?.user) {
                     progress={project.progress}
                     status={project.status}
                   />
-
                 ))}
-
               </div>
-
             )}
-
           </div>
-
         </section>
-
       </div>
-
     </main>
   );
 }
