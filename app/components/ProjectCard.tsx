@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 type ProjectCardProps = {
   id: number;
   name: string;
@@ -19,15 +21,35 @@ export default function ProjectCard({
   onDelete,
   onEdit,
 }: ProjectCardProps) {
-  return (
-    <div className="rounded-xl bg-white p-6 shadow-sm">
-      <h4 className="text-xl font-semibold text-gray-900">
-        {name}
-      </h4>
+  const router = useRouter();
 
-      <p className="mt-2 text-gray-500">
-        {description}
-      </p>
+  function openProject() {
+    router.push(`/projects/${id}`);
+  }
+
+  return (
+    <div className="rounded-xl bg-white p-6 shadow-sm transition hover:shadow-md">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <button
+            onClick={openProject}
+            className="text-left text-xl font-semibold text-gray-900 transition hover:text-blue-600"
+          >
+            {name}
+          </button>
+
+          <p className="mt-2 text-gray-500">
+            {description}
+          </p>
+        </div>
+
+        <button
+          onClick={openProject}
+          className="shrink-0 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+        >
+          View
+        </button>
+      </div>
 
       <div className="mt-5">
         <div className="flex justify-between text-sm">
@@ -40,8 +62,10 @@ export default function ProjectCard({
 
         <div className="mt-2 h-2 w-full rounded-full bg-gray-200">
           <div
-            className="h-2 rounded-full bg-blue-600"
-            style={{ width: `${progress}%` }}
+            className="h-2 rounded-full bg-blue-600 transition-all"
+            style={{
+              width: `${Math.min(Math.max(progress, 0), 100)}%`,
+            }}
           />
         </div>
       </div>
@@ -60,14 +84,14 @@ export default function ProjectCard({
         <div className="flex gap-2">
           <button
             onClick={() => onEdit(id)}
-            className="rounded-lg px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50"
+            className="rounded-lg px-3 py-2 text-sm font-medium text-blue-600 transition hover:bg-blue-50"
           >
             Edit
           </button>
 
           <button
             onClick={() => onDelete(id)}
-            className="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+            className="rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
           >
             Delete
           </button>

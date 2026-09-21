@@ -8,6 +8,39 @@ async function getSession(request: Request) {
   });
 }
 
+async function updateProjectProgress(projectId: number) {
+  const tasks = await prisma.task.findMany({
+    where: {
+      projectId,
+    },
+    select: {
+      status: true,
+    },
+  });
+
+  const totalTasks = tasks.length;
+
+  const completedTasks = tasks.filter(
+    (task) => task.status === "Completed"
+  ).length;
+
+  const progress =
+    totalTasks === 0
+      ? 0
+      : Math.round((completedTasks / totalTasks) * 100);
+
+  await prisma.project.update({
+    where: {
+      id: projectId,
+    },
+    data: {
+      progress,
+    },
+  });
+
+  return progress;
+}
+
 export async function GET(request: Request) {
   try {
     const session = await getSession(request);
@@ -103,6 +136,8 @@ export async function POST(request: Request) {
       },
     });
 
+    await updateProjectProgress(Number(projectId));
+
     return NextResponse.json(task, { status: 201 });
   } catch (error) {
     console.error("Failed to create task:", error);
@@ -159,7 +194,6 @@ export async function PUT(request: Request) {
       );
     }
 
-    // Verify the existing task belongs to the logged-in user.
     const existingTask = await prisma.task.findFirst({
       where: {
         id: Number(id),
@@ -176,7 +210,6 @@ export async function PUT(request: Request) {
       );
     }
 
-    // Verify the new project also belongs to the logged-in user.
     const project = await prisma.project.findFirst({
       where: {
         id: Number(projectId),
@@ -191,6 +224,9 @@ export async function PUT(request: Request) {
       );
     }
 
+    const oldProjectId = existingTask.projectId;
+    const newProjectId = Number(projectId);
+
     const task = await prisma.task.update({
       where: {
         id: Number(id),
@@ -200,12 +236,21 @@ export async function PUT(request: Request) {
         description:
           description?.trim() || "No description provided.",
         status: status || "To Do",
-        projectId: Number(projectId),
+        projectId: newProjectId,
       },
       include: {
         project: true,
       },
     });
+
+    // Recalculate the new project's progress.
+    await updateProjectProgress(newProjectId);
+
+    // If the task was moved to another project,
+    // recalculate the old project's progress too.
+    if (oldProjectId !== newProjectId) {
+      await updateProjectProgress(oldProjectId);
+    }
 
     return NextResponse.json(task);
   } catch (error) {
@@ -241,7 +286,6 @@ export async function DELETE(request: Request) {
       );
     }
 
-    // Only allow deletion of a task belonging to the logged-in user.
     const existingTask = await prisma.task.findFirst({
       where: {
         id: Number(id),
@@ -258,11 +302,15 @@ export async function DELETE(request: Request) {
       );
     }
 
+    const projectId = existingTask.projectId;
+
     await prisma.task.delete({
       where: {
         id: Number(id),
       },
     });
+
+    await updateProjectProgress(projectId);
 
     return NextResponse.json({
       message: "Task deleted successfully",
