@@ -140,37 +140,44 @@ export default function Home() {
           </p>
 
           {/* Statistics */}
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="Projects"
-              value={projects.length}
-            />
+          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-5">
+  <StatCard
+    title="Projects"
+    value={projects.length}
+  />
 
-            <StatCard
-              title="Tasks"
-              value={tasks.length}
-            />
+  <StatCard
+    title="Tasks"
+    value={tasks.length}
+  />
 
-            <StatCard
-              title="In Progress"
-              value={
-                projects.filter(
-                  (project) =>
-                    project.status === "In Progress"
-                ).length
-              }
-            />
+  <StatCard
+    title="To Do"
+    value={
+      tasks.filter(
+        (task) => task.status === "To Do"
+      ).length
+    }
+  />
 
-            <StatCard
-              title="Completed"
-              value={
-                projects.filter(
-                  (project) =>
-                    project.status === "Completed"
-                ).length
-              }
-            />
-          </div>
+  <StatCard
+    title="In Progress"
+    value={
+      tasks.filter(
+        (task) => task.status === "In Progress"
+      ).length
+    }
+  />
+
+  <StatCard
+    title="Completed"
+    value={
+      tasks.filter(
+        (task) => task.status === "Completed"
+      ).length
+    }
+  />
+</div>
 
           {/* Recent Projects */}
           <div className="mt-10">
