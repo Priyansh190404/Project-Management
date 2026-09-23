@@ -54,27 +54,23 @@ export default function ProjectsPage() {
   const [statusFilter, setStatusFilter] =
     useState("All");
 
-  useEffect(() => {
-    if (isPending) {
-      return;
-    }
+useEffect(() => {
+  const params = new URLSearchParams(
+    window.location.search
+  );
 
-    if (!session?.user) {
-      router.replace("/sign-in");
-      return;
-    }
+  if (params.get("new") === "true") {
+    setShowModal(true);
 
-    fetchProjects();
-
-    if (searchParams.get("new") === "true") {
-      setShowModal(true);
-    }
-  }, [
-    isPending,
-    session,
-    router,
-    searchParams,
-  ]);
+    // Remove ?new=true so the modal does not
+    // reopen on subsequent renders/navigation.
+    window.history.replaceState(
+      {},
+      "",
+      "/projects"
+    );
+  }
+}, []);
 
   async function fetchProjects() {
     try {

@@ -94,6 +94,7 @@ export async function POST(request: Request) {
       title,
       description,
       projectId,
+      priority,
     } = body;
 
     if (!title?.trim()) {
@@ -129,6 +130,7 @@ export async function POST(request: Request) {
         title: title.trim(),
         description:
           description?.trim() || "No description provided.",
+        priority: priority || "Medium",
         projectId: Number(projectId),
       },
       include: {
@@ -170,6 +172,7 @@ export async function PUT(request: Request) {
       title,
       description,
       status,
+      priority,
       projectId,
     } = body;
 
@@ -236,6 +239,7 @@ export async function PUT(request: Request) {
         description:
           description?.trim() || "No description provided.",
         status: status || "To Do",
+        priority: priority || "Medium",
         projectId: newProjectId,
       },
       include: {

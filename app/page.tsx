@@ -102,11 +102,22 @@ export default function Home() {
     return null;
   }
 
+  const todoTasks = tasks.filter(
+    (task) => task.status === "To Do"
+  ).length;
+
+  const inProgressTasks = tasks.filter(
+    (task) => task.status === "In Progress"
+  ).length;
+
+  const completedTasks = tasks.filter(
+    (task) => task.status === "Completed"
+  ).length;
+
   return (
     <main className="min-h-screen bg-gray-100">
       <Sidebar />
 
-      {/* Main area */}
       <div className="ml-64 min-h-screen">
         {/* Top bar */}
         <header className="flex h-20 items-center justify-between border-b bg-white px-8">
@@ -141,43 +152,31 @@ export default function Home() {
 
           {/* Statistics */}
           <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-5">
-  <StatCard
-    title="Projects"
-    value={projects.length}
-  />
+            <StatCard
+              title="Projects"
+              value={projects.length}
+            />
 
-  <StatCard
-    title="Tasks"
-    value={tasks.length}
-  />
+            <StatCard
+              title="Tasks"
+              value={tasks.length}
+            />
 
-  <StatCard
-    title="To Do"
-    value={
-      tasks.filter(
-        (task) => task.status === "To Do"
-      ).length
-    }
-  />
+            <StatCard
+              title="To Do"
+              value={todoTasks}
+            />
 
-  <StatCard
-    title="In Progress"
-    value={
-      tasks.filter(
-        (task) => task.status === "In Progress"
-      ).length
-    }
-  />
+            <StatCard
+              title="In Progress"
+              value={inProgressTasks}
+            />
 
-  <StatCard
-    title="Completed"
-    value={
-      tasks.filter(
-        (task) => task.status === "Completed"
-      ).length
-    }
-  />
-</div>
+            <StatCard
+              title="Completed"
+              value={completedTasks}
+            />
+          </div>
 
           {/* Recent Projects */}
           <div className="mt-10">

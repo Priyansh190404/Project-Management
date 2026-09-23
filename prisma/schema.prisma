@@ -93,6 +93,7 @@ model Task {
   title       String
   description String
   status      String   @default("To Do")
+  priority    String   @default("Medium")
   createdAt   DateTime @default(now())
 
   projectId Int
