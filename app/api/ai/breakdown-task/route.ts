@@ -82,7 +82,9 @@ Requirements:
 - Return only the requested JSON structure.
 `;
 
-    const response = await ai.models.generateContent({
+    console.log("Starting Gemini task breakdown...");
+
+const response = await ai.models.generateContent({
       model: "gemini-3.5-flash-lite",
       contents: prompt,
       config: {
@@ -116,6 +118,7 @@ Requirements:
         },
       },
     });
+    console.log("Gemini response received:", response.text);
 
     const text = response.text;
 

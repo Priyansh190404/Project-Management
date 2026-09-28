@@ -10,14 +10,14 @@ type Project = {
   name: string;
 };
 
-type Task = {
+type Subtask = {
   id: number;
   title: string;
   description: string;
   status: string;
   priority: string;
   projectId: number;
-  project?: Project;
+  parentTaskId: number | null;
   createdAt: string;
 };
 
@@ -25,6 +25,19 @@ type GeneratedSubtask = {
   title: string;
   description: string;
   priority: "High" | "Medium" | "Low";
+};
+
+type Task = {
+  id: number;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  projectId: number;
+  parentTaskId: number | null;
+  project?: Project;
+  subtasks?: Subtask[];
+  createdAt: string;
 };
 
 export default function TasksPage() {
@@ -48,10 +61,23 @@ export default function TasksPage() {
   const [editingTask, setEditingTask] =
     useState<Task | null>(null);
 
+  const [viewingTask, setViewingTask] =
+    useState<Task | null>(null);
+
   // Search and filters
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
+
+  // Bulk task selection
+  const [selectionMode, setSelectionMode] =
+    useState(false);
+
+  const [selectedTaskIds, setSelectedTaskIds] =
+    useState<number[]>([]);
+
+  const [deletingSelected, setDeletingSelected] =
+    useState(false);
 
   // AI Task Breakdown
   const [breakdownTask, setBreakdownTask] =
@@ -349,6 +375,12 @@ export default function TasksPage() {
             currentTask.id !== task.id
         )
       );
+
+      setSelectedTaskIds((currentIds) =>
+        currentIds.filter(
+          (id) => id !== task.id
+        )
+      );
     } catch (error) {
       console.error(
         "Error deleting task:",
@@ -356,6 +388,127 @@ export default function TasksPage() {
       );
 
       alert("Failed to delete task.");
+    }
+  }
+
+  function toggleTaskSelection(taskId: number) {
+    setSelectedTaskIds((currentIds) =>
+      currentIds.includes(taskId)
+        ? currentIds.filter(
+            (id) => id !== taskId
+          )
+        : [...currentIds, taskId]
+    );
+  }
+
+  function toggleSelectAll() {
+    const visibleTaskIds = filteredTasks.map(
+      (task) => task.id
+    );
+
+    const allSelected =
+      visibleTaskIds.length > 0 &&
+      visibleTaskIds.every((id) =>
+        selectedTaskIds.includes(id)
+      );
+
+    if (allSelected) {
+      setSelectedTaskIds((currentIds) =>
+        currentIds.filter(
+          (id) => !visibleTaskIds.includes(id)
+        )
+      );
+    } else {
+      setSelectedTaskIds((currentIds) => [
+        ...new Set([
+          ...currentIds,
+          ...visibleTaskIds,
+        ]),
+      ]);
+    }
+  }
+
+  function enterSelectionMode() {
+    setSelectionMode(true);
+    setSelectedTaskIds([]);
+  }
+
+  function exitSelectionMode() {
+    setSelectionMode(false);
+    setSelectedTaskIds([]);
+  }
+
+  async function deleteSelectedTasks() {
+    if (selectedTaskIds.length === 0) {
+      return;
+    }
+
+    const selectedTasks = tasks.filter((task) =>
+      selectedTaskIds.includes(task.id)
+    );
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${selectedTasks.length} selected ${
+        selectedTasks.length === 1
+          ? "task"
+          : "tasks"
+      }?\n\nTheir subtasks will also be deleted.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingSelected(true);
+
+    try {
+      for (const taskId of selectedTaskIds) {
+        const response = await fetch("/api/tasks", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id: taskId,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData =
+            await response
+              .json()
+              .catch(() => null);
+
+          throw new Error(
+            errorData?.details ||
+              errorData?.error ||
+              "Failed to delete selected tasks."
+          );
+        }
+      }
+
+      setTasks((currentTasks) =>
+        currentTasks.filter(
+          (task) =>
+            !selectedTaskIds.includes(task.id)
+        )
+      );
+
+      setSelectedTaskIds([]);
+      setSelectionMode(false);
+    } catch (error) {
+      console.error(
+        "Error deleting selected tasks:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to delete selected tasks."
+      );
+    } finally {
+      setDeletingSelected(false);
     }
   }
 
@@ -482,8 +635,8 @@ export default function TasksPage() {
               title: subtask.title,
               description: subtask.description,
               priority: subtask.priority,
-              projectId:
-                breakdownTask.projectId,
+              projectId: breakdownTask.projectId,
+              parentTaskId: breakdownTask.id,
             }),
           }
         );
@@ -538,6 +691,11 @@ export default function TasksPage() {
   // status, and priority
   const filteredTasks = tasks.filter(
     (task) => {
+      // Only show top-level tasks on the main page.
+      if (task.parentTaskId !== null) {
+        return false;
+      }
+
       const search = searchQuery
         .trim()
         .toLowerCase();
@@ -550,7 +708,7 @@ export default function TasksPage() {
           .toLowerCase()
           .includes(search) ||
         task.project?.name
-          .toLowerCase()
+          ?.toLowerCase()
           .includes(search);
 
       const matchesStatus =
@@ -568,6 +726,18 @@ export default function TasksPage() {
       );
     }
   );
+
+  // Group filtered top-level tasks by project.
+  const groupedTasks = projects
+    .map((project) => ({
+      project,
+      tasks: filteredTasks.filter(
+        (task) => task.projectId === project.id
+      ),
+    }))
+    .filter(
+      (group) => group.tasks.length > 0
+    );
 
   if (isPending) {
     return (
@@ -771,107 +941,239 @@ export default function TasksPage() {
               </button>
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {filteredTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="rounded-xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <h2 className="text-xl font-bold text-gray-900">
-                      {task.title}
-                    </h2>
+            <div>
+              {/* Selection Controls */}
+              <div className="mb-6 flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                {!selectionMode ? (
+                  <button
+                    onClick={enterSelectionMode}
+                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                  >
+                    Select Tasks
+                  </button>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={
+                          filteredTasks.length > 0 &&
+                          filteredTasks.every((task) =>
+                            selectedTaskIds.includes(
+                              task.id
+                            )
+                          )
+                        }
+                        onChange={toggleSelectAll}
+                        className="h-5 w-5 cursor-pointer rounded border-gray-300"
+                      />
 
-                    {/* Status Badge */}
-                    <div className="shrink-0">
-                      {task.status ===
-                        "Completed" && (
-                        <span className="inline-block rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
-                          Completed
-                        </span>
-                      )}
+                      <span className="text-sm font-medium text-gray-700">
+                        Select All
+                      </span>
 
-                      {task.status ===
-                        "In Progress" && (
-                        <span className="inline-block rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
-                          In Progress
-                        </span>
-                      )}
-
-                      {task.status === "To Do" && (
-                        <span className="inline-block rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-700">
-                          To Do
+                      {selectedTaskIds.length > 0 && (
+                        <span className="text-sm text-gray-500">
+                          {selectedTaskIds.length}{" "}
+                          selected
                         </span>
                       )}
                     </div>
-                  </div>
 
-                  {/* Priority */}
-                  <div className="mt-4">
-                    {task.priority === "High" && (
-                      <span className="inline-block rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
-                        High Priority
-                      </span>
-                    )}
+                    <div className="flex items-center gap-3">
+                      {selectedTaskIds.length > 0 && (
+                        <button
+                          onClick={deleteSelectedTasks}
+                          disabled={deletingSelected}
+                          className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
+                        >
+                          {deletingSelected
+                            ? "Deleting..."
+                            : `Delete Selected (${selectedTaskIds.length})`}
+                        </button>
+                      )}
 
-                    {task.priority === "Medium" && (
-                      <span className="inline-block rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-700">
-                        Medium Priority
-                      </span>
-                    )}
+                      <button
+                        onClick={exitSelectionMode}
+                        disabled={deletingSelected}
+                        className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
 
-                    {task.priority === "Low" && (
-                      <span className="inline-block rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
-                        Low Priority
-                      </span>
-                    )}
-                  </div>
+              {/* Tasks Grouped By Project */}
+              <div className="space-y-8">
+                {groupedTasks.map(
+                  ({
+                    project,
+                    tasks: projectTasks,
+                  }) => (
+                    <div key={project.id}>
+                      {/* Project Header */}
+                      <div className="mb-4 flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-lg">
+                          📁
+                        </div>
 
-                  <p className="mt-3 line-clamp-3 text-gray-600">
-                    {task.description ||
-                      "No description provided."}
-                  </p>
+                        <div>
+                          <h2 className="text-xl font-bold text-gray-900">
+                            {project.name}
+                          </h2>
 
-                  <p className="mt-5 text-sm text-gray-500">
-                    Project
-                  </p>
+                          <p className="text-sm text-gray-500">
+                            {projectTasks.length}{" "}
+                            {projectTasks.length ===
+                            1
+                              ? "task"
+                              : "tasks"}
+                          </p>
+                        </div>
+                      </div>
 
-                  <p className="font-medium text-gray-900">
-                    {task.project?.name ||
-                      "Unknown"}
-                  </p>
+                      {/* Project Tasks */}
+                      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {projectTasks.map(
+                          (task) => {
+                            const isSelected =
+                              selectedTaskIds.includes(
+                                task.id
+                              );
 
-                  {/* Task Actions */}
-                  <div className="mt-6 flex flex-wrap justify-end gap-2 border-t pt-4">
-                    <button
-                      onClick={() =>
-                        breakDownTask(task)
-                      }
-                      className="rounded-lg bg-purple-50 px-3 py-2 text-sm font-medium text-purple-600 hover:bg-purple-100"
-                    >
-                      ✨ Break Down
-                    </button>
+                            return (
+                              <div
+                                key={task.id}
+                                className={`rounded-xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md ${
+                                  isSelected
+                                    ? "ring-2 ring-blue-500"
+                                    : ""
+                                }`}
+                              >
+                                {/* Task Header */}
+                                <div className="flex items-start gap-3">
+                                  {selectionMode && (
+                                    <input
+                                      type="checkbox"
+                                      checked={
+                                        isSelected
+                                      }
+                                      onChange={() =>
+                                        toggleTaskSelection(
+                                          task.id
+                                        )
+                                      }
+                                      className="mt-1 h-5 w-5 shrink-0 cursor-pointer rounded border-gray-300"
+                                    />
+                                  )}
 
-                    <button
-                      onClick={() =>
-                        openEditModal(task)
-                      }
-                      className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-                    >
-                      Edit
-                    </button>
+                                  <div className="flex min-w-0 flex-1 items-start justify-between gap-4">
+                                    <h2 className="text-xl font-bold text-gray-900">
+                                      {task.title}
+                                    </h2>
 
-                    <button
-                      onClick={() =>
-                        deleteTask(task)
-                      }
-                      className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
+                                    {/* Status Badge */}
+                                    <div className="shrink-0">
+                                      {task.status ===
+                                        "Completed" && (
+                                        <span className="inline-block rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
+                                          Completed
+                                        </span>
+                                      )}
+
+                                      {task.status ===
+                                        "In Progress" && (
+                                        <span className="inline-block rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
+                                          In Progress
+                                        </span>
+                                      )}
+
+                                      {task.status ===
+                                        "To Do" && (
+                                        <span className="inline-block rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-700">
+                                          To Do
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Priority */}
+                                <div className="mt-4">
+                                  {task.priority ===
+                                    "High" && (
+                                    <span className="inline-block rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
+                                      High Priority
+                                    </span>
+                                  )}
+
+                                  {task.priority ===
+                                    "Medium" && (
+                                    <span className="inline-block rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-700">
+                                      Medium Priority
+                                    </span>
+                                  )}
+
+                                  {task.priority ===
+                                    "Low" && (
+                                    <span className="inline-block rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
+                                      Low Priority
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Description */}
+                                <p className="mt-3 line-clamp-3 text-gray-600">
+                                  {task.description ||
+                                    "No description provided."}
+                                </p>
+
+                                {/* Task Actions */}
+                                <div className="mt-6 flex flex-wrap justify-end gap-2 border-t pt-4">
+                                  <button
+                                    onClick={() =>
+                                      setViewingTask(
+                                        task
+                                      )
+                                    }
+                                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                  >
+                                    View Details
+                                  </button>
+
+                                  <button
+                                    onClick={() =>
+                                      breakDownTask(
+                                        task
+                                      )
+                                    }
+                                    className="rounded-lg bg-purple-50 px-3 py-2 text-sm font-medium text-purple-600 hover:bg-purple-100"
+                                  >
+                                    ✨ Break Down
+                                  </button>
+
+                                  <button
+                                    onClick={() =>
+                                      openEditModal(
+                                        task
+                                      )
+                                    }
+                                    className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                                  >
+                                    Edit
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          }
+                        )}
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
             </div>
           )}
         </section>
@@ -1272,6 +1574,140 @@ export default function TasksPage() {
                     </div>
                   </>
                 )}
+            </div>
+          </div>
+        )}
+
+        {/* ================================ */}
+        {/* TASK DETAILS MODAL */}
+        {/* ================================ */}
+
+        {viewingTask && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+              {/* Header */}
+              <div className="flex items-start justify-between gap-4 border-b px-6 py-5">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {viewingTask.title}
+                  </h2>
+
+                  <p className="mt-2 text-sm text-gray-500">
+                    Task details and subtasks
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setViewingTask(null)}
+                  className="text-3xl leading-none text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Task Details */}
+              <div className="space-y-6 px-6 py-6">
+                <div>
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+                    Description
+                  </h3>
+
+                  <p className="mt-2 leading-7 text-gray-700">
+                    {viewingTask.description ||
+                      "No description provided."}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <span className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700">
+                    {viewingTask.status}
+                  </span>
+
+                  <span className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700">
+                    {viewingTask.priority} Priority
+                  </span>
+
+                  <span className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700">
+                    {viewingTask.project?.name ||
+                      "Unknown Project"}
+                  </span>
+                </div>
+
+                {/* Subtasks */}
+                <div className="border-t pt-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-gray-900">
+                      Subtasks
+                    </h3>
+
+                    <span className="text-sm text-gray-500">
+                      {viewingTask.subtasks?.length ||
+                        0}{" "}
+                      total
+                    </span>
+                  </div>
+
+                  {viewingTask.subtasks &&
+                  viewingTask.subtasks.length > 0 ? (
+                    <div className="mt-4 space-y-3">
+                      {viewingTask.subtasks.map(
+                        (subtask) => (
+                          <div
+                            key={subtask.id}
+                            className="rounded-xl border border-gray-200 bg-gray-50 p-4"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="min-w-0">
+                                <h4 className="font-semibold text-gray-900">
+                                  {subtask.title}
+                                </h4>
+
+                                <p className="mt-1 text-sm leading-6 text-gray-600">
+                                  {subtask.description ||
+                                    "No description provided."}
+                                </p>
+                              </div>
+
+                              <div className="flex shrink-0 flex-wrap gap-2">
+                                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                                  {subtask.status}
+                                </span>
+
+                                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                                  {subtask.priority}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  ) : (
+                    <div className="mt-4 rounded-xl border border-dashed border-gray-300 p-6 text-center">
+                      <p className="text-gray-500">
+                        No subtasks yet.
+                      </p>
+
+                      <p className="mt-1 text-sm text-gray-400">
+                        Use "Break Down" to generate
+                        subtasks with AI.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex justify-end border-t bg-gray-50 px-6 py-4">
+                <button
+                  onClick={() =>
+                    setViewingTask(null)
+                  }
+                  className="rounded-lg bg-gray-900 px-5 py-3 font-semibold text-white hover:bg-gray-800"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         )}

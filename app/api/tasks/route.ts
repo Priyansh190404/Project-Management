@@ -12,6 +12,7 @@ async function updateProjectProgress(projectId: number) {
   const tasks = await prisma.task.findMany({
     where: {
       projectId,
+      parentTaskId: null,
     },
     select: {
       status: true,
@@ -57,12 +58,18 @@ export async function GET(request: Request) {
         project: {
           userId: session.user.id,
         },
+        parentTaskId: null,
       },
       orderBy: {
         createdAt: "desc",
       },
       include: {
         project: true,
+        subtasks: {
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
       },
     });
 
@@ -95,6 +102,7 @@ export async function POST(request: Request) {
       description,
       projectId,
       priority,
+      parentTaskId,
     } = body;
 
     if (!title?.trim()) {
@@ -125,6 +133,33 @@ export async function POST(request: Request) {
       );
     }
 
+    let validParentTaskId: number | null = null;
+
+    if (parentTaskId) {
+      const parentTask = await prisma.task.findFirst({
+        where: {
+          id: Number(parentTaskId),
+          projectId: Number(projectId),
+          parentTaskId: null,
+          project: {
+            userId: session.user.id,
+          },
+        },
+      });
+
+      if (!parentTask) {
+        return NextResponse.json(
+          {
+            error:
+              "Invalid parent task. Subtasks cannot have subtasks.",
+          },
+          { status: 400 }
+        );
+      }
+
+      validParentTaskId = Number(parentTaskId);
+    }
+
     const task = await prisma.task.create({
       data: {
         title: title.trim(),
@@ -132,9 +167,11 @@ export async function POST(request: Request) {
           description?.trim() || "No description provided.",
         priority: priority || "Medium",
         projectId: Number(projectId),
+        parentTaskId: validParentTaskId,
       },
       include: {
         project: true,
+        subtasks: true,
       },
     });
 
@@ -230,6 +267,20 @@ export async function PUT(request: Request) {
     const oldProjectId = existingTask.projectId;
     const newProjectId = Number(projectId);
 
+    // A subtask cannot be moved to a different project.
+    if (
+      existingTask.parentTaskId !== null &&
+      oldProjectId !== newProjectId
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "A subtask cannot be moved to another project.",
+        },
+        { status: 400 }
+      );
+    }
+
     const task = await prisma.task.update({
       where: {
         id: Number(id),
@@ -244,14 +295,12 @@ export async function PUT(request: Request) {
       },
       include: {
         project: true,
+        subtasks: true,
       },
     });
 
-    // Recalculate the new project's progress.
     await updateProjectProgress(newProjectId);
 
-    // If the task was moved to another project,
-    // recalculate the old project's progress too.
     if (oldProjectId !== newProjectId) {
       await updateProjectProgress(oldProjectId);
     }

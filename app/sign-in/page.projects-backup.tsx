@@ -24,14 +24,12 @@ export default function ProjectsPage() {
 
   const [showModal, setShowModal] = useState(false);
 
-  // Create project state
   const [projectName, setProjectName] = useState("");
   const [description, setDescription] = useState("");
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Edit project state
   const [editingProject, setEditingProject] =
     useState<Project | null>(null);
 
@@ -39,38 +37,38 @@ export default function ProjectsPage() {
   const [editDescription, setEditDescription] =
     useState("");
 
-  const [editProgress, setEditProgress] =
-    useState(0);
+  const [editProgress, setEditProgress] = useState(0);
 
   const [editStatus, setEditStatus] =
     useState<"In Progress" | "Completed">(
       "In Progress"
     );
 
-  // Search and filter
-  const [searchQuery, setSearchQuery] =
-    useState("");
-
+  const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] =
     useState("All");
 
-useEffect(() => {
-  fetchProjects();
+  useEffect(() => {
+    if (isPending) {
+      return;
+    }
 
-  const params = new URLSearchParams(
-    window.location.search
-  );
+    if (!session?.user) {
+      router.replace("/sign-in");
+      return;
+    }
 
-  if (params.get("new") === "true") {
-    setShowModal(true);
+    fetchProjects();
 
-    window.history.replaceState(
-      {},
-      "",
-      "/projects"
-    );
-  }
-}, []);
+    if (searchParams.get("new") === "true") {
+      setShowModal(true);
+    }
+  }, [
+    isPending,
+    session,
+    router,
+    searchParams,
+  ]);
 
   async function fetchProjects() {
     try {
@@ -240,7 +238,6 @@ useEffect(() => {
     }
   }
 
-  // Search + status filtering
   const filteredProjects =
     projects.filter((project) => {
       const search =
@@ -268,8 +265,8 @@ useEffect(() => {
 
   if (isPending) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gray-100">
-        <p className="text-gray-500">
+      <main className="flex min-h-screen items-center justify-center bg-slate-950">
+        <p className="text-slate-400">
           Checking authentication...
         </p>
       </main>
@@ -281,38 +278,38 @@ useEffect(() => {
   }
 
   return (
-    <main className="min-h-screen bg-gray-100">
+    <main className="min-h-screen bg-slate-950 text-white">
       <Sidebar />
 
       <div className="ml-64 min-h-screen">
         {/* Header */}
-        <header className="flex items-center justify-between border-b bg-white px-8 py-5">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Projects
-            </h1>
+        <header className="border-b border-slate-800 bg-slate-950/95 px-8 py-6">
+          <div className="flex items-center justify-between gap-6">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">
+                Projects
+              </h1>
 
-            <p className="mt-1 text-gray-500">
-              Manage and track all your projects.
-            </p>
+              <p className="mt-1 text-sm text-slate-400">
+                Manage and track all your projects.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowModal(true)}
+              className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-200"
+            >
+              + New Project
+            </button>
           </div>
-
-          <button
-            onClick={() =>
-              setShowModal(true)
-            }
-            className="rounded-lg bg-gray-900 px-5 py-2.5 font-medium text-white transition hover:bg-gray-800"
-          >
-            + New Project
-          </button>
         </header>
 
         {/* Search and Filters */}
-        <section className="border-b bg-white px-10 py-5">
+        <section className="border-b border-slate-800 bg-slate-950 px-10 py-5">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             {/* Search */}
             <div className="relative w-full md:max-w-md">
-              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">
                 🔍
               </span>
 
@@ -320,12 +317,10 @@ useEffect(() => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) =>
-                  setSearchQuery(
-                    e.target.value
-                  )
+                  setSearchQuery(e.target.value)
                 }
                 placeholder="Search projects..."
-                className="w-full rounded-lg border border-gray-300 bg-gray-50 py-3 pl-11 pr-4 text-gray-900 outline-none transition focus:border-blue-500 focus:bg-white"
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 py-3 pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500"
               />
             </div>
 
@@ -333,7 +328,7 @@ useEffect(() => {
             <div className="flex items-center gap-3">
               <label
                 htmlFor="project-status-filter"
-                className="text-sm font-medium text-gray-600"
+                className="text-sm font-medium text-slate-400"
               >
                 Status:
               </label>
@@ -342,15 +337,11 @@ useEffect(() => {
                 id="project-status-filter"
                 value={statusFilter}
                 onChange={(e) =>
-                  setStatusFilter(
-                    e.target.value
-                  )
+                  setStatusFilter(e.target.value)
                 }
-                className="rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 outline-none focus:border-blue-500"
+                className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-200 outline-none focus:border-blue-500"
               >
-                <option value="All">
-                  All
-                </option>
+                <option value="All">All</option>
 
                 <option value="In Progress">
                   In Progress
@@ -363,15 +354,14 @@ useEffect(() => {
             </div>
           </div>
 
-          {/* Result Count */}
           {!loading && (
-            <p className="mt-3 text-sm text-gray-500">
+            <p className="mt-3 text-sm text-slate-500">
               Showing{" "}
-              <span className="font-medium text-gray-700">
+              <span className="font-medium text-slate-300">
                 {filteredProjects.length}
               </span>{" "}
               of{" "}
-              <span className="font-medium text-gray-700">
+              <span className="font-medium text-slate-300">
                 {projects.length}
               </span>{" "}
               projects
@@ -382,36 +372,39 @@ useEffect(() => {
         {/* Projects */}
         <section className="p-10">
           {loading ? (
-            <p className="text-gray-500">
-              Loading projects...
-            </p>
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-10 text-center">
+              <p className="text-slate-400">
+                Loading projects...
+              </p>
+            </div>
           ) : projects.length === 0 ? (
-            <div className="rounded-xl bg-white p-10 text-center shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900">
+            <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-900/50 p-12 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-lg">
+                +
+              </div>
+
+              <h2 className="mt-4 text-xl font-semibold">
                 No projects yet
               </h2>
 
-              <p className="mt-2 text-gray-500">
+              <p className="mt-2 text-sm text-slate-400">
                 Create your first project to get started.
               </p>
 
               <button
-                onClick={() =>
-                  setShowModal(true)
-                }
-                className="mt-5 rounded-lg bg-gray-900 px-5 py-3 font-semibold text-white hover:bg-gray-800"
+                onClick={() => setShowModal(true)}
+                className="mt-6 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-200"
               >
                 + Create Project
               </button>
             </div>
-          ) : filteredProjects.length ===
-            0 ? (
-            <div className="rounded-xl bg-white p-10 text-center shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900">
+          ) : filteredProjects.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-900/50 p-12 text-center">
+              <h2 className="text-xl font-semibold">
                 No matching projects
               </h2>
 
-              <p className="mt-2 text-gray-500">
+              <p className="mt-2 text-sm text-slate-400">
                 Try changing your search or status filter.
               </p>
 
@@ -420,55 +413,49 @@ useEffect(() => {
                   setSearchQuery("");
                   setStatusFilter("All");
                 }}
-                className="mt-5 rounded-lg border border-gray-300 px-5 py-3 font-medium text-gray-700 hover:bg-gray-50"
+                className="mt-6 rounded-lg border border-slate-700 px-5 py-2.5 text-sm font-medium text-slate-300 transition hover:border-slate-500 hover:text-white"
               >
                 Clear Filters
               </button>
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {filteredProjects.map(
-                (project) => (
-                  <ProjectCard
-                    key={project.id}
-                    id={project.id}
-                    name={project.name}
-                    description={
-                      project.description
-                    }
-                    progress={
-                      project.progress
-                    }
-                    status={project.status}
-                    onDelete={
-                      deleteProject
-                    }
-                    onEdit={() =>
-                      openEditModal(
-                        project
-                      )
-                    }
-                  />
-                )
-              )}
+              {filteredProjects.map((project) => (
+                <ProjectCard
+                  key={project.id}
+                  id={project.id}
+                  name={project.name}
+                  description={project.description}
+                  progress={project.progress}
+                  status={project.status}
+                  onDelete={deleteProject}
+                  onEdit={() =>
+                    openEditModal(project)
+                  }
+                />
+              ))}
             </div>
           )}
         </section>
 
         {/* Create Project Modal */}
         {showModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+            <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">
-                  Create New Project
-                </h2>
+                <div>
+                  <h2 className="text-xl font-semibold">
+                    Create New Project
+                  </h2>
+
+                  <p className="mt-1 text-sm text-slate-400">
+                    Add a project to your workspace.
+                  </p>
+                </div>
 
                 <button
-                  onClick={() =>
-                    setShowModal(false)
-                  }
-                  className="text-2xl text-gray-400 hover:text-gray-600"
+                  onClick={() => setShowModal(false)}
+                  className="text-2xl text-slate-500 transition hover:text-white"
                 >
                   ×
                 </button>
@@ -476,7 +463,7 @@ useEffect(() => {
 
               <div className="mt-6 space-y-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                  <label className="mb-2 block text-sm font-medium text-slate-300">
                     Project Name
                   </label>
 
@@ -484,36 +471,33 @@ useEffect(() => {
                     type="text"
                     value={projectName}
                     onChange={(e) =>
-                      setProjectName(
-                        e.target.value
-                      )
+                      setProjectName(e.target.value)
                     }
                     placeholder="Enter project name"
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                  <label className="mb-2 block text-sm font-medium text-slate-300">
                     Description
                   </label>
 
                   <textarea
                     value={description}
                     onChange={(e) =>
-                      setDescription(
-                        e.target.value
-                      )
+                      setDescription(e.target.value)
                     }
                     placeholder="Describe your project"
                     rows={4}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
+                    className="w-full resize-none rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
                   />
                 </div>
 
                 <button
                   onClick={createProject}
-                  className="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700"
+                  disabled={!projectName.trim()}
+                  className="w-full rounded-lg bg-white py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Create Project
                 </button>
@@ -524,20 +508,24 @@ useEffect(() => {
 
         {/* Edit Project Modal */}
         {editingProject && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+            <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">
-                  Edit Project
-                </h2>
+                <div>
+                  <h2 className="text-xl font-semibold">
+                    Edit Project
+                  </h2>
+
+                  <p className="mt-1 text-sm text-slate-400">
+                    Update your project details.
+                  </p>
+                </div>
 
                 <button
                   onClick={() =>
-                    setEditingProject(
-                      null
-                    )
+                    setEditingProject(null)
                   }
-                  className="text-2xl text-gray-400 hover:text-gray-600"
+                  className="text-2xl text-slate-500 transition hover:text-white"
                 >
                   ×
                 </button>
@@ -545,7 +533,7 @@ useEffect(() => {
 
               <div className="mt-6 space-y-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                  <label className="mb-2 block text-sm font-medium text-slate-300">
                     Project Name
                   </label>
 
@@ -553,35 +541,30 @@ useEffect(() => {
                     type="text"
                     value={editName}
                     onChange={(e) =>
-                      setEditName(
-                        e.target.value
-                      )
+                      setEditName(e.target.value)
                     }
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-white outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                  <label className="mb-2 block text-sm font-medium text-slate-300">
                     Description
                   </label>
 
                   <textarea
                     value={editDescription}
                     onChange={(e) =>
-                      setEditDescription(
-                        e.target.value
-                      )
+                      setEditDescription(e.target.value)
                     }
                     rows={4}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
+                    className="w-full resize-none rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-white outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Progress:{" "}
-                    {editProgress}%
+                  <label className="mb-2 block text-sm font-medium text-slate-300">
+                    Progress: {editProgress}%
                   </label>
 
                   <input
@@ -590,31 +573,24 @@ useEffect(() => {
                     max="100"
                     value={editProgress}
                     onChange={(e) => {
-                      const value =
-                        Number(
-                          e.target.value
-                        );
-
-                      setEditProgress(
-                        value
+                      const value = Number(
+                        e.target.value
                       );
 
+                      setEditProgress(value);
+
                       if (value === 100) {
-                        setEditStatus(
-                          "Completed"
-                        );
+                        setEditStatus("Completed");
                       } else {
-                        setEditStatus(
-                          "In Progress"
-                        );
+                        setEditStatus("In Progress");
                       }
                     }}
-                    className="w-full"
+                    className="w-full accent-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                  <label className="mb-2 block text-sm font-medium text-slate-300">
                     Status
                   </label>
 
@@ -626,20 +602,13 @@ useEffect(() => {
                           | "In Progress"
                           | "Completed";
 
-                      setEditStatus(
-                        status
-                      );
+                      setEditStatus(status);
 
-                      if (
-                        status ===
-                        "Completed"
-                      ) {
-                        setEditProgress(
-                          100
-                        );
+                      if (status === "Completed") {
+                        setEditProgress(100);
                       }
                     }}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-white outline-none focus:border-blue-500"
                   >
                     <option value="In Progress">
                       In Progress
@@ -652,10 +621,9 @@ useEffect(() => {
                 </div>
 
                 <button
-                  onClick={
-                    updateProject
-                  }
-                  className="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700"
+                  onClick={updateProject}
+                  disabled={!editName.trim()}
+                  className="w-full rounded-lg bg-white py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Update Project
                 </button>
@@ -667,4 +635,3 @@ useEffect(() => {
     </main>
   );
 }
-
