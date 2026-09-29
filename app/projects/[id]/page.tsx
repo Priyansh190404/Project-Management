@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { authClient } from "../../lib/auth-client";
 import Sidebar from "../../components/Sidebar";
 import AIProjectAssistant from "../../components/AIProjectAssistant";
-
+import AIProjectInsights from "../../components/AIProjectInsights";
 type Project = {
   id: number;
   name: string;
@@ -538,6 +538,7 @@ export default function ProjectDetailsPage() {
             )}
           </section>
                     <AIProjectAssistant projectId={projectId} />
+                    <AIProjectInsights projectId={projectId} />
         </div>
       </main>
 
