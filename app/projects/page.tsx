@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "../lib/auth-client";
 import ProjectCard from "../components/ProjectCard";
 import Sidebar from "../components/Sidebar";
+import AIProjectPlanner from "../components/AIProjectPlanner";
 
 type Project = {
   id: number;
@@ -381,6 +382,7 @@ useEffect(() => {
 
         {/* Projects */}
         <section className="p-10">
+          <AIProjectPlanner />
           {loading ? (
             <p className="text-gray-500">
               Loading projects...
