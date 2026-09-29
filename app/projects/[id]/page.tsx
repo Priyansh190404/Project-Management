@@ -6,6 +6,7 @@ import { authClient } from "../../lib/auth-client";
 import Sidebar from "../../components/Sidebar";
 import AIProjectAssistant from "../../components/AIProjectAssistant";
 import AIProjectInsights from "../../components/AIProjectInsights";
+import ProjectDocuments from "../../components/ProjectDocuments";
 type Project = {
   id: number;
   name: string;
@@ -539,6 +540,7 @@ export default function ProjectDetailsPage() {
           </section>
                     <AIProjectAssistant projectId={projectId} />
                     <AIProjectInsights projectId={projectId} />
+                    <ProjectDocuments projectId={projectId} />
         </div>
       </main>
 
