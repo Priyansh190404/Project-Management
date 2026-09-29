@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { authClient } from "../../lib/auth-client";
 import Sidebar from "../../components/Sidebar";
+import AIProjectAssistant from "../../components/AIProjectAssistant";
 
 type Project = {
   id: number;
@@ -536,6 +537,7 @@ export default function ProjectDetailsPage() {
               </div>
             )}
           </section>
+                    <AIProjectAssistant projectId={projectId} />
         </div>
       </main>
 
