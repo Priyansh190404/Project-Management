@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { authClient } from "../lib/auth-client";
 import ProjectCard from "../components/ProjectCard";
 import Sidebar from "../components/Sidebar";
@@ -18,7 +18,6 @@ type Project = {
 
 export default function ProjectsPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const { data: session, isPending } =
     authClient.useSession();
