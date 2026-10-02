@@ -84,17 +84,16 @@ export default function ProjectCard({
         }),
       });
 
-      const data = await response.json();
-if (!response.ok) {
-  const errorData = await response.json().catch(() => null);
+    
+const data = await response.json();
 
+if (!response.ok) {
   throw new Error(
-    errorData?.details ||
-      errorData?.error ||
+    data?.details ||
+      data?.error ||
       "Failed to generate tasks with AI"
   );
 }
-
       setGeneratedTasks(data.tasks);
 
       // Select all generated tasks by default

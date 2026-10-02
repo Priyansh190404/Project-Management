@@ -104,8 +104,25 @@ model Task {
   parentTask   Task?  @relation("TaskSubtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
   subtasks     Task[] @relation("TaskSubtasks")
 
+  dependencies TaskDependency[] @relation("TaskDependencies")
+  dependents   TaskDependency[] @relation("TaskDependents")
+
   @@index([projectId])
   @@index([parentTaskId])
+}
+
+model TaskDependency {
+  id Int @id @default(autoincrement())
+
+  taskId       Int
+  dependsOnId  Int
+
+  task       Task @relation("TaskDependencies", fields: [taskId], references: [id], onDelete: Cascade)
+  dependsOn  Task @relation("TaskDependents", fields: [dependsOnId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, dependsOnId])
+  @@index([taskId])
+  @@index([dependsOnId])
 }
 
 model ProjectDocument {

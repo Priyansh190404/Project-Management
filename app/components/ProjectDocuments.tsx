@@ -117,18 +117,18 @@ export default function ProjectDocuments({
   }
 
   return (
-    <section className="mt-8 rounded-2xl border border-emerald-500/20 bg-slate-900/70 p-6 shadow-xl">
+    <section className="mt-8 rounded-2xl border border-emerald-200 bg-white p-6 shadow-sm">
       <div className="flex items-start gap-4">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-xl">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-xl">
           📄
         </div>
 
         <div>
-          <h2 className="text-xl font-semibold">
+          <h2 className="text-xl font-semibold text-gray-900">
             Project Documents
           </h2>
 
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-gray-500">
             Add project documentation that the AI
             assistant can use as project knowledge.
           </p>
@@ -136,7 +136,7 @@ export default function ProjectDocuments({
       </div>
 
       {error && (
-        <div className="mt-5 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <div className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
           {error}
         </div>
       )}
@@ -150,7 +150,7 @@ export default function ProjectDocuments({
           }
           placeholder="Document name"
           disabled={loading}
-          className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-emerald-500 disabled:opacity-50"
+          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-emerald-500 disabled:opacity-50"
         />
 
         <textarea
@@ -161,7 +161,7 @@ export default function ProjectDocuments({
           placeholder="Paste your project documentation here..."
           rows={7}
           disabled={loading}
-          className="w-full resize-y rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-sm leading-6 text-white outline-none placeholder:text-slate-500 focus:border-emerald-500 disabled:opacity-50"
+          className="w-full resize-y rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm leading-6 text-gray-900 outline-none placeholder:text-gray-400 focus:border-emerald-500 disabled:opacity-50"
         />
 
         <button
@@ -179,16 +179,16 @@ export default function ProjectDocuments({
       </div>
 
       <div className="mt-8">
-        <h3 className="font-semibold">
+        <h3 className="font-semibold text-gray-900">
           Added Documents
         </h3>
 
         {loadingDocuments ? (
-          <p className="mt-3 text-sm text-slate-500">
+          <p className="mt-3 text-sm text-gray-500">
             Loading documents...
           </p>
         ) : documents.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500">
+          <p className="mt-3 text-sm text-gray-500">
             No documents added yet.
           </p>
         ) : (
@@ -196,13 +196,13 @@ export default function ProjectDocuments({
             {documents.map((document) => (
               <div
                 key={document.id}
-                className="rounded-xl border border-slate-800 bg-slate-950/50 p-4"
+                className="rounded-xl border border-gray-200 bg-gray-50 p-4"
               >
-                <p className="font-medium">
+                <p className="font-medium text-gray-900">
                   {document.name}
                 </p>
 
-                <p className="mt-1 line-clamp-2 text-sm text-slate-400">
+                <p className="mt-1 line-clamp-2 text-sm text-gray-600">
                   {document.content}
                 </p>
               </div>

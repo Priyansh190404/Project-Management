@@ -63,14 +63,25 @@ export async function GET(request: Request) {
       orderBy: {
         createdAt: "desc",
       },
-      include: {
-        project: true,
-        subtasks: {
-          orderBy: {
-            createdAt: "asc",
-          },
+    include: {
+  project: true,
+  subtasks: {
+    orderBy: {
+      createdAt: "asc",
+    },
+  },
+  dependencies: {
+    include: {
+      dependsOn: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
         },
       },
+    },
+  },
+},
     });
 
     return NextResponse.json(tasks);

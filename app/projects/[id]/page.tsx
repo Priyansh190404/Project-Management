@@ -7,6 +7,7 @@ import Sidebar from "../../components/Sidebar";
 import AIProjectAssistant from "../../components/AIProjectAssistant";
 import AIProjectInsights from "../../components/AIProjectInsights";
 import ProjectDocuments from "../../components/ProjectDocuments";
+
 type Project = {
   id: number;
   name: string;
@@ -277,11 +278,11 @@ export default function ProjectDetailsPage() {
 
   if (isPending || loading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white">
+      <div className="min-h-screen bg-gray-100">
         <Sidebar />
 
         <main className="ml-64 flex min-h-screen items-center justify-center">
-          <div className="text-sm text-slate-400">
+          <div className="text-sm text-gray-500">
             Loading project...
           </div>
         </main>
@@ -291,22 +292,22 @@ export default function ProjectDetailsPage() {
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white">
+      <div className="min-h-screen bg-gray-100">
         <Sidebar />
 
         <main className="ml-64 flex min-h-screen items-center justify-center px-6">
           <div className="text-center">
-            <h1 className="text-2xl font-semibold">
+            <h1 className="text-2xl font-semibold text-gray-900">
               {error || "Project not found"}
             </h1>
 
-            <p className="mt-2 text-slate-400">
+            <p className="mt-2 text-gray-500">
               The project may have been deleted or may not exist.
             </p>
 
             <button
               onClick={() => router.push("/projects")}
-              className="mt-6 rounded-lg bg-white px-5 py-2.5 text-sm font-medium text-slate-900 transition hover:bg-slate-200"
+              className="mt-6 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800"
             >
               Back to Projects
             </button>
@@ -317,7 +318,7 @@ export default function ProjectDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-gray-100">
       <Sidebar />
 
       <main className="ml-64 min-h-screen px-8 py-8">
@@ -325,44 +326,44 @@ export default function ProjectDetailsPage() {
           {/* Back button */}
           <button
             onClick={() => router.push("/projects")}
-            className="mb-6 flex items-center gap-2 text-sm text-slate-400 transition hover:text-white"
+            className="mb-6 flex items-center gap-2 text-sm text-gray-500 transition hover:text-gray-900"
           >
             <span className="text-lg">←</span>
             Back to Projects
           </button>
 
           {/* Project Header */}
-          <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-7 shadow-xl">
+          <section className="rounded-2xl border border-gray-200 bg-white p-7 shadow-sm">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-3xl">
                 <div className="mb-3 flex items-center gap-3">
-                  <span className="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-400">
+                  <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-600">
                     Project
                   </span>
 
                   <span
                     className={`rounded-full px-3 py-1 text-xs font-medium ${
                       project.status === "Completed"
-                        ? "bg-green-500/10 text-green-400"
-                        : "bg-blue-500/10 text-blue-400"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-blue-100 text-blue-700"
                     }`}
                   >
                     {project.status}
                   </span>
                 </div>
 
-                <h1 className="text-3xl font-bold tracking-tight">
+                <h1 className="text-3xl font-bold tracking-tight text-gray-900">
                   {project.name}
                 </h1>
 
-                <p className="mt-3 text-sm leading-6 text-slate-400">
+                <p className="mt-3 text-sm leading-6 text-gray-500">
                   {project.description}
                 </p>
               </div>
 
               <button
                 onClick={openCreateTaskModal}
-                className="shrink-0 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-200"
+                className="shrink-0 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-800"
               >
                 + New Task
               </button>
@@ -371,18 +372,18 @@ export default function ProjectDetailsPage() {
             {/* Progress */}
             <div className="mt-8">
               <div className="mb-2 flex items-center justify-between text-sm">
-                <span className="text-slate-400">
+                <span className="text-gray-500">
                   Project Progress
                 </span>
 
-                <span className="font-semibold text-white">
+                <span className="font-semibold text-gray-900">
                   {project.progress}%
                 </span>
               </div>
 
-              <div className="h-2.5 overflow-hidden rounded-full bg-slate-800">
+              <div className="h-2.5 overflow-hidden rounded-full bg-gray-200">
                 <div
-                  className="h-full rounded-full bg-blue-500 transition-all"
+                  className="h-full rounded-full bg-blue-600 transition-all"
                   style={{
                     width: `${Math.min(
                       Math.max(project.progress, 0),
@@ -396,30 +397,42 @@ export default function ProjectDetailsPage() {
 
           {/* Statistics */}
           <section className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-5">
-              <p className="text-sm text-slate-400">Total Tasks</p>
-              <p className="mt-2 text-2xl font-bold">
+            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+              <p className="text-sm text-gray-500">
+                Total Tasks
+              </p>
+
+              <p className="mt-2 text-2xl font-bold text-gray-900">
                 {taskStats.total}
               </p>
             </div>
 
-            <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-5">
-              <p className="text-sm text-slate-400">To Do</p>
-              <p className="mt-2 text-2xl font-bold text-yellow-400">
+            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+              <p className="text-sm text-gray-500">
+                To Do
+              </p>
+
+              <p className="mt-2 text-2xl font-bold text-yellow-600">
                 {taskStats.todo}
               </p>
             </div>
 
-            <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-5">
-              <p className="text-sm text-slate-400">In Progress</p>
-              <p className="mt-2 text-2xl font-bold text-blue-400">
+            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+              <p className="text-sm text-gray-500">
+                In Progress
+              </p>
+
+              <p className="mt-2 text-2xl font-bold text-blue-600">
                 {taskStats.inProgress}
               </p>
             </div>
 
-            <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-5">
-              <p className="text-sm text-slate-400">Completed</p>
-              <p className="mt-2 text-2xl font-bold text-green-400">
+            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+              <p className="text-sm text-gray-500">
+                Completed
+              </p>
+
+              <p className="mt-2 text-2xl font-bold text-green-600">
                 {taskStats.completed}
               </p>
             </div>
@@ -429,38 +442,38 @@ export default function ProjectDetailsPage() {
           <section className="mt-8">
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold">
+                <h2 className="text-xl font-semibold text-gray-900">
                   Project Tasks
                 </h2>
 
-                <p className="mt-1 text-sm text-slate-400">
+                <p className="mt-1 text-sm text-gray-500">
                   Manage tasks associated with this project.
                 </p>
               </div>
 
-              <span className="text-sm text-slate-500">
+              <span className="text-sm text-gray-400">
                 {tasks.length}{" "}
                 {tasks.length === 1 ? "task" : "tasks"}
               </span>
             </div>
 
             {tasks.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-900/40 px-6 py-16 text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-xl">
+              <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-16 text-center shadow-sm">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-xl text-gray-500">
                   ✓
                 </div>
 
-                <h3 className="mt-4 text-lg font-semibold">
+                <h3 className="mt-4 text-lg font-semibold text-gray-900">
                   No tasks yet
                 </h3>
 
-                <p className="mt-2 text-sm text-slate-400">
+                <p className="mt-2 text-sm text-gray-500">
                   Create your first task for this project.
                 </p>
 
                 <button
                   onClick={openCreateTaskModal}
-                  className="mt-5 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-200"
+                  className="mt-5 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-800"
                 >
                   + Create Task
                 </button>
@@ -470,29 +483,29 @@ export default function ProjectDetailsPage() {
                 {tasks.map((task) => (
                   <div
                     key={task.id}
-                    className="rounded-xl border border-slate-800 bg-slate-900/70 p-5 transition hover:border-slate-700"
+                    className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-gray-300 hover:shadow-md"
                   >
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-3">
-                          <h3 className="font-semibold text-white">
+                          <h3 className="font-semibold text-gray-900">
                             {task.title}
                           </h3>
 
                           <span
                             className={`rounded-full px-2.5 py-1 text-xs font-medium ${
                               task.status === "Completed"
-                                ? "bg-green-500/10 text-green-400"
+                                ? "bg-green-100 text-green-700"
                                 : task.status === "In Progress"
-                                ? "bg-blue-500/10 text-blue-400"
-                                : "bg-yellow-500/10 text-yellow-400"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-yellow-100 text-yellow-700"
                             }`}
                           >
                             {task.status}
                           </span>
                         </div>
 
-                        <p className="mt-2 text-sm leading-6 text-slate-400">
+                        <p className="mt-2 text-sm leading-6 text-gray-500">
                           {task.description}
                         </p>
                       </div>
@@ -509,25 +522,35 @@ export default function ProjectDetailsPage() {
                                 | "Completed"
                             )
                           }
-                          className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-xs text-white outline-none focus:border-blue-500"
+                          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-700 outline-none focus:border-blue-500"
                         >
-                          <option value="To Do">To Do</option>
+                          <option value="To Do">
+                            To Do
+                          </option>
+
                           <option value="In Progress">
                             In Progress
                           </option>
-                          <option value="Completed">Completed</option>
+
+                          <option value="Completed">
+                            Completed
+                          </option>
                         </select>
 
                         <button
-                          onClick={() => openEditTaskModal(task)}
-                          className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-slate-300 transition hover:border-slate-500 hover:text-white"
+                          onClick={() =>
+                            openEditTaskModal(task)
+                          }
+                          className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-600 transition hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900"
                         >
                           Edit
                         </button>
 
                         <button
-                          onClick={() => deleteTask(task.id)}
-                          className="rounded-lg border border-red-500/20 px-3 py-2 text-xs font-medium text-red-400 transition hover:bg-red-500/10"
+                          onClick={() =>
+                            deleteTask(task.id)
+                          }
+                          className="rounded-lg border border-red-200 px-3 py-2 text-xs font-medium text-red-600 transition hover:bg-red-50"
                         >
                           Delete
                         </button>
@@ -538,23 +561,28 @@ export default function ProjectDetailsPage() {
               </div>
             )}
           </section>
-                    <AIProjectAssistant projectId={projectId} />
-                    <AIProjectInsights projectId={projectId} />
-                    <ProjectDocuments projectId={projectId} />
+
+          <AIProjectAssistant projectId={projectId} />
+
+          <AIProjectInsights projectId={projectId} />
+
+          <ProjectDocuments projectId={projectId} />
         </div>
       </main>
 
       {/* Task Modal */}
       {showTaskModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl">
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold">
-                  {editingTask ? "Edit Task" : "Create Task"}
+                <h2 className="text-xl font-semibold text-gray-900">
+                  {editingTask
+                    ? "Edit Task"
+                    : "Create Task"}
                 </h2>
 
-                <p className="mt-1 text-sm text-slate-400">
+                <p className="mt-1 text-sm text-gray-500">
                   {editingTask
                     ? "Update the task details."
                     : `Add a task to ${project.name}.`}
@@ -563,7 +591,7 @@ export default function ProjectDetailsPage() {
 
               <button
                 onClick={closeTaskModal}
-                className="text-xl text-slate-500 transition hover:text-white"
+                className="text-xl text-gray-400 transition hover:text-gray-700"
               >
                 ×
               </button>
@@ -571,7 +599,7 @@ export default function ProjectDetailsPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-300">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
                   Task Title
                 </label>
 
@@ -582,12 +610,12 @@ export default function ProjectDetailsPage() {
                     setTaskTitle(event.target.value)
                   }
                   placeholder="Enter task title"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-300">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
                   Description
                 </label>
 
@@ -598,13 +626,13 @@ export default function ProjectDetailsPage() {
                   }
                   placeholder="Describe the task"
                   rows={4}
-                  className="w-full resize-none rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
+                  className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-500"
                 />
               </div>
 
               {editingTask && (
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-300">
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
                     Status
                   </label>
 
@@ -618,13 +646,19 @@ export default function ProjectDetailsPage() {
                           | "Completed"
                       )
                     }
-                    className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-white outline-none focus:border-blue-500"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-700 outline-none focus:border-blue-500"
                   >
-                    <option value="To Do">To Do</option>
+                    <option value="To Do">
+                      To Do
+                    </option>
+
                     <option value="In Progress">
                       In Progress
                     </option>
-                    <option value="Completed">Completed</option>
+
+                    <option value="Completed">
+                      Completed
+                    </option>
                   </select>
                 </div>
               )}
@@ -633,7 +667,7 @@ export default function ProjectDetailsPage() {
             <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={closeTaskModal}
-                className="rounded-lg border border-slate-700 px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:border-slate-500 hover:text-white"
+                className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:border-gray-400 hover:bg-gray-50 hover:text-gray-900"
               >
                 Cancel
               </button>
@@ -641,9 +675,11 @@ export default function ProjectDetailsPage() {
               <button
                 onClick={saveTask}
                 disabled={!taskTitle.trim()}
-                className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {editingTask ? "Save Changes" : "Create Task"}
+                {editingTask
+                  ? "Save Changes"
+                  : "Create Task"}
               </button>
             </div>
           </div>
@@ -652,3 +688,4 @@ export default function ProjectDetailsPage() {
     </div>
   );
 }
+

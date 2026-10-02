@@ -27,6 +27,14 @@ type GeneratedSubtask = {
   priority: "High" | "Medium" | "Low";
 };
 
+type Dependency = {
+  dependsOn: {
+    id: number;
+    title: string;
+    status: string;
+  };
+};
+
 type Task = {
   id: number;
   title: string;
@@ -37,6 +45,7 @@ type Task = {
   parentTaskId: number | null;
   project?: Project;
   subtasks?: Subtask[];
+  dependencies?: Dependency[];
   createdAt: string;
 };
 
@@ -63,6 +72,8 @@ export default function TasksPage() {
 
   const [viewingTask, setViewingTask] =
     useState<Task | null>(null);
+    const [dependencyTaskId, setDependencyTaskId] = useState("");
+const [addingDependency, setAddingDependency] = useState(false);
 
   // Search and filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -391,6 +402,144 @@ export default function TasksPage() {
     }
   }
 
+  async function addDependency() {
+  if (!viewingTask || !dependencyTaskId) {
+    return;
+  }
+
+  try {
+    setAddingDependency(true);
+
+    const response = await fetch("/api/tasks/dependencies", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        taskId: viewingTask.id,
+        dependsOnId: Number(dependencyTaskId),
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data?.error || "Failed to add dependency"
+      );
+    }
+
+    const newDependency: Dependency = {
+      dependsOn: {
+        id: data.dependsOn.id,
+        title: data.dependsOn.title,
+        status: data.dependsOn.status,
+      },
+    };
+
+    setViewingTask((currentTask) => {
+      if (!currentTask) {
+        return currentTask;
+      }
+
+      return {
+        ...currentTask,
+        dependencies: [
+          ...(currentTask.dependencies || []),
+          newDependency,
+        ],
+      };
+    });
+
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === viewingTask.id
+          ? {
+              ...task,
+              dependencies: [
+                ...(task.dependencies || []),
+                newDependency,
+              ],
+            }
+          : task
+      )
+    );
+
+    setDependencyTaskId("");
+  } catch (error) {
+    console.error("Failed to add dependency:", error);
+    alert(
+      error instanceof Error
+        ? error.message
+        : "Failed to add dependency"
+    );
+  } finally {
+    setAddingDependency(false);
+  }
+}
+
+async function removeDependency(dependsOnId: number) {
+  if (!viewingTask) {
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/tasks/dependencies", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        taskId: viewingTask.id,
+        dependsOnId,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data?.error || "Failed to remove dependency"
+      );
+    }
+
+    setViewingTask((currentTask) => {
+      if (!currentTask) {
+        return currentTask;
+      }
+
+      return {
+        ...currentTask,
+        dependencies: (currentTask.dependencies || []).filter(
+          (dependency) =>
+            dependency.dependsOn.id !== dependsOnId
+        ),
+      };
+    });
+
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === viewingTask.id
+          ? {
+              ...task,
+              dependencies: (task.dependencies || []).filter(
+                (dependency) =>
+                  dependency.dependsOn.id !== dependsOnId
+              ),
+            }
+          : task
+      )
+    );
+  } catch (error) {
+    console.error("Failed to remove dependency:", error);
+
+    alert(
+      error instanceof Error
+        ? error.message
+        : "Failed to remove dependency"
+    );
+  }
+}
   function toggleTaskSelection(taskId: number) {
     setSelectedTaskIds((currentIds) =>
       currentIds.includes(taskId)
@@ -1632,6 +1781,96 @@ export default function TasksPage() {
                       "Unknown Project"}
                   </span>
                 </div>
+
+                {/* Dependencies */}
+<div className="border-t pt-6">
+  <div className="flex items-center justify-between">
+    <div>
+      <h3 className="text-lg font-semibold text-gray-900">
+        Dependencies
+      </h3>
+      <p className="mt-1 text-sm text-gray-500">
+        Tasks that must be completed before this task.
+      </p>
+    </div>
+  </div>
+
+  {/* Existing dependencies */}
+  <div className="mt-4 space-y-2">
+    {viewingTask.dependencies &&
+    viewingTask.dependencies.length > 0 ? (
+      viewingTask.dependencies.map((dependency) => (
+        <div
+          key={dependency.dependsOn.id}
+          className="flex items-center justify-between rounded-lg border bg-gray-50 px-4 py-3"
+        >
+          <div>
+            <p className="font-medium text-gray-900">
+              {dependency.dependsOn.title}
+            </p>
+
+            <p className="mt-1 text-xs text-gray-500">
+              Status: {dependency.dependsOn.status}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() =>
+              removeDependency(dependency.dependsOn.id)
+            }
+            className="text-sm font-medium text-red-600 hover:text-red-700"
+          >
+            Remove
+          </button>
+        </div>
+      ))
+    ) : (
+      <p className="text-sm text-gray-500">
+        No dependencies added.
+      </p>
+    )}
+  </div>
+
+  {/* Add dependency */}
+  <div className="mt-4 flex gap-3">
+    <select
+      value={dependencyTaskId}
+      onChange={(event) =>
+        setDependencyTaskId(event.target.value)
+      }
+      className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+    >
+      <option value="">Select a task...</option>
+
+      {tasks
+        .filter(
+          (task) =>
+            task.projectId === viewingTask.projectId &&
+            task.id !== viewingTask.id &&
+            task.parentTaskId === null &&
+            !(viewingTask.dependencies || []).some(
+              (dependency) =>
+                dependency.dependsOn.id === task.id
+            )
+        )
+        .map((task) => (
+          <option key={task.id} value={task.id}>
+            {task.title}
+          </option>
+        ))}
+    </select>
+
+    <button
+      type="button"
+      onClick={addDependency}
+      disabled={!dependencyTaskId || addingDependency}
+      className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {addingDependency ? "Adding..." : "Add"}
+    </button>
+  </div>
+</div>
 
                 {/* Subtasks */}
                 <div className="border-t pt-6">

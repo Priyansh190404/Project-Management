@@ -86,18 +86,18 @@ export default function AIProjectAssistant({
   }
 
   return (
-    <section className="mt-8 rounded-2xl border border-blue-500/20 bg-slate-900/70 p-6 shadow-xl">
+    <section className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
       <div className="flex items-start gap-4">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-xl">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-xl">
           ✨
         </div>
 
         <div>
-          <h2 className="text-xl font-semibold">
+          <h2 className="text-xl font-semibold text-gray-900">
             AI Project Assistant
           </h2>
 
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-gray-500">
             Ask questions about this project, its tasks,
             progress, and priorities.
           </p>
@@ -105,7 +105,7 @@ export default function AIProjectAssistant({
       </div>
 
       {messages.length > 0 && (
-        <div className="mt-6 max-h-[420px] space-y-4 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+        <div className="mt-6 max-h-[420px] space-y-4 overflow-y-auto rounded-xl border border-gray-200 bg-gray-50 p-4">
           {messages.map((message, index) => (
             <div
               key={index}
@@ -119,7 +119,7 @@ export default function AIProjectAssistant({
                 className={`max-w-[85%] rounded-xl px-4 py-3 text-sm leading-6 ${
                   message.role === "user"
                     ? "bg-blue-600 text-white"
-                    : "bg-slate-800 text-slate-200"
+                    : "border border-gray-200 bg-white text-gray-900"
                 }`}
               >
                 {message.content}
@@ -129,7 +129,7 @@ export default function AIProjectAssistant({
 
           {loading && (
             <div className="flex justify-start">
-              <div className="rounded-xl bg-slate-800 px-4 py-3 text-sm text-slate-400">
+              <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-500">
                 Thinking...
               </div>
             </div>
@@ -138,7 +138,7 @@ export default function AIProjectAssistant({
       )}
 
       {error && (
-        <div className="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
           {error}
         </div>
       )}
@@ -157,7 +157,7 @@ export default function AIProjectAssistant({
           }}
           placeholder="Ask about this project..."
           disabled={loading}
-          className="flex-1 rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-blue-500 disabled:opacity-50"
+          className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-500 disabled:opacity-50"
         />
 
         <button
