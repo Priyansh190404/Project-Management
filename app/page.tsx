@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -189,7 +189,7 @@ export default function Home() {
                 href="/projects"
                 className="font-medium text-gray-700 hover:text-gray-900"
               >
-                View all →
+                View all
               </a>
             </div>
 
@@ -230,3 +230,4 @@ export default function Home() {
     </main>
   );
 }
+
