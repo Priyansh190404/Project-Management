@@ -14,6 +14,8 @@ type Project = {
   progress: number;
   status: "In Progress" | "Completed";
   createdAt: string;
+  role?: "owner" | "member";
+  ownerName?: string | null;
 };
 
 export default function ProjectsPage() {
@@ -284,9 +286,9 @@ useEffect(() => {
     <main className="min-h-screen bg-gray-100">
       <Sidebar />
 
-      <div className="ml-64 min-h-screen">
+      <div className="min-h-screen lg:ml-64">
         {/* Header */}
-        <header className="flex items-center justify-between border-b bg-white px-8 py-5">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b bg-white px-4 py-4 sm:px-8 sm:py-5">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
               Projects
@@ -301,14 +303,14 @@ useEffect(() => {
             onClick={() =>
               setShowModal(true)
             }
-            className="rounded-lg bg-gray-900 px-5 py-2.5 font-medium text-white transition hover:bg-gray-800"
+            className="rounded-lg bg-blue-600 px-5 py-2.5 font-medium text-white transition hover:bg-blue-700"
           >
             + New Project
           </button>
         </header>
 
         {/* Search and Filters */}
-        <section className="border-b bg-white px-10 py-5">
+        <section className="border-b bg-white px-4 py-4 sm:px-10 sm:py-5">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             {/* Search */}
             <div className="relative w-full md:max-w-md">
@@ -380,14 +382,14 @@ useEffect(() => {
         </section>
 
         {/* Projects */}
-        <section className="p-10">
+        <section className="p-4 sm:p-6 lg:p-10">
           <AIProjectPlanner />
           {loading ? (
             <p className="text-gray-500">
               Loading projects...
             </p>
           ) : projects.length === 0 ? (
-            <div className="rounded-xl bg-white p-10 text-center shadow-sm">
+            <div className="rounded-xl bg-white p-6 text-center shadow-sm sm:p-10">
               <h2 className="text-xl font-semibold text-gray-900">
                 No projects yet
               </h2>
@@ -400,14 +402,14 @@ useEffect(() => {
                 onClick={() =>
                   setShowModal(true)
                 }
-                className="mt-5 rounded-lg bg-gray-900 px-5 py-3 font-semibold text-white hover:bg-gray-800"
+                className="mt-5 rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700"
               >
                 + Create Project
               </button>
             </div>
           ) : filteredProjects.length ===
             0 ? (
-            <div className="rounded-xl bg-white p-10 text-center shadow-sm">
+            <div className="rounded-xl bg-white p-6 text-center shadow-sm sm:p-10">
               <h2 className="text-xl font-semibold text-gray-900">
                 No matching projects
               </h2>
@@ -441,13 +443,23 @@ useEffect(() => {
                       project.progress
                     }
                     status={project.status}
-                    onDelete={
-                      deleteProject
+                    sharedBy={
+                      project.role === "member"
+                        ? project.ownerName ?? null
+                        : undefined
                     }
-                    onEdit={() =>
-                      openEditModal(
-                        project
-                      )
+                    onDelete={
+                      project.role === "member"
+                        ? undefined
+                        : deleteProject
+                    }
+                    onEdit={
+                      project.role === "member"
+                        ? undefined
+                        : () =>
+                            openEditModal(
+                              project
+                            )
                     }
                   />
                 )
@@ -459,7 +471,7 @@ useEffect(() => {
         {/* Create Project Modal */}
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <div className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-xl bg-white p-5 shadow-xl sm:p-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900">
                   Create New Project
@@ -526,7 +538,7 @@ useEffect(() => {
         {/* Edit Project Modal */}
         {editingProject && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <div className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-xl bg-white p-5 shadow-xl sm:p-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900">
                   Edit Project

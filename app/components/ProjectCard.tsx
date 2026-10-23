@@ -17,6 +17,7 @@ type ProjectCardProps = {
   status: "In Progress" | "Completed";
   onDelete?: (id: number) => void;
   onEdit?: (id: number) => void;
+  sharedBy?: string | null;
 };
 
 export default function ProjectCard({
@@ -27,6 +28,7 @@ export default function ProjectCard({
   status,
   onDelete,
   onEdit,
+  sharedBy,
 }: ProjectCardProps) {
   const router = useRouter();
 
@@ -205,6 +207,11 @@ if (!response.ok) {
               {name}
             </button>
 
+            {sharedBy !== undefined && (
+              <p className="mt-1 text-sm text-gray-500">
+                Shared by {sharedBy ?? "the owner"}
+              </p>
+            )}
             <p className="mt-2 text-gray-500">
               {description}
             </p>
@@ -283,7 +290,7 @@ if (!response.ok) {
 
       {showAIModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+          <div className="max-h-[90dvh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
             <div className="border-b border-gray-200 px-6 py-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -432,7 +439,7 @@ if (!response.ok) {
                 </div>
               )}
 
-              <div className="flex justify-end gap-3 border-t border-gray-100 pt-5">
+              <div className="flex flex-wrap justify-end gap-3 border-t border-gray-100 pt-5">
                 <button
                   onClick={closeAIModal}
                   disabled={loadingAI || addingTasks}

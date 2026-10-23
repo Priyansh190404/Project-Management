@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { authClient } from "../lib/auth-client";
+import AuthShell, {
+  authButtonClass,
+  authErrorClass,
+  authInputClass,
+  authLabelClass,
+} from "../components/AuthShell";
 
 export default function SignInPage() {
-  const router = useRouter();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -31,66 +34,25 @@ export default function SignInPage() {
     }
 
     setLoading(false);
-    window.location.href = "/";
+
+    // Signed-in users land on the welcome page first, unless they chose to skip it
+    let skipWelcome = false;
+
+    try {
+      skipWelcome = localStorage.getItem("taskflow:skip-welcome") === "1";
+    } catch {
+      skipWelcome = false;
+    }
+
+    window.location.href = skipWelcome ? "/" : "/welcome";
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
-      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-white">Welcome back</h1>
-          <p className="mt-2 text-slate-400">
-            Sign in to continue to TaskFlow.
-          </p>
-        </div>
-
-        <form onSubmit={handleSignIn} className="space-y-5">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-300">
-              Email
-            </label>
-
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@example.com"
-              required
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-300">
-              Password
-            </label>
-
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Enter your password"
-              required
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
-            />
-          </div>
-
-          {error && (
-            <p className="rounded-lg border border-red-900 bg-red-950/40 px-4 py-3 text-sm text-red-400">
-              {error}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? "Signing in..." : "Sign In"}
-          </button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-slate-400">
+    <AuthShell
+      title="Welcome back"
+      subtitle="Sign in to continue to TaskFlow."
+      footer={
+        <>
           Don&apos;t have an account?{" "}
           <Link
             href="/signup"
@@ -98,8 +60,54 @@ export default function SignInPage() {
           >
             Create an account
           </Link>
-        </p>
-      </div>
-    </main>
+        </>
+      }
+    >
+      <form onSubmit={handleSignIn} className="space-y-5">
+        <div>
+          <label htmlFor="email" className={authLabelClass}>
+            Email
+          </label>
+
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="you@example.com"
+            required
+            className={authInputClass}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="password" className={authLabelClass}>
+            Password
+          </label>
+
+          <input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="Enter your password"
+            required
+            className={authInputClass}
+          />
+        </div>
+
+        {error && (
+          <p role="alert" className={authErrorClass}>
+            {error}
+          </p>
+        )}
+
+        <button type="submit" disabled={loading} className={authButtonClass}>
+          {loading ? "Signing in..." : "Sign in"}
+        </button>
+      </form>
+    </AuthShell>
   );
 }

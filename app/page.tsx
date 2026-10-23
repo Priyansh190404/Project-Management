@@ -118,9 +118,9 @@ export default function Home() {
     <main className="min-h-screen bg-gray-100">
       <Sidebar />
 
-      <div className="ml-64 min-h-screen">
+      <div className="min-h-screen lg:ml-64">
         {/* Top bar */}
-        <header className="flex h-20 items-center justify-between border-b bg-white px-8">
+        <header className="flex min-h-20 flex-wrap items-center justify-between gap-3 border-b bg-white px-4 py-3 sm:px-8">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
               Dashboard
@@ -134,24 +134,24 @@ export default function Home() {
 
           <a
             href="/projects?new=true"
-            className="rounded-lg bg-gray-900 px-5 py-2.5 font-medium text-white hover:bg-gray-800"
+            className="rounded-lg bg-blue-600 px-5 py-2.5 font-medium text-white hover:bg-blue-700"
           >
             + New Project
           </a>
         </header>
 
         {/* Main content */}
-        <section className="p-10">
-          <h2 className="text-4xl font-bold text-gray-900">
+        <section className="p-4 sm:p-6 lg:p-10">
+          <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
             Manage your projects and tasks.
           </h2>
 
-          <p className="mt-3 text-lg text-gray-600">
+          <p className="mt-3 text-base text-gray-600 sm:text-lg">
             Collaborate with your team and get work done efficiently.
           </p>
 
           {/* Statistics */}
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-5">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-3 lg:grid-cols-5">
             <StatCard
               title="Projects"
               value={projects.length}

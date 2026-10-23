@@ -15,6 +15,8 @@ type Project = {
   progress: number;
   status: "In Progress" | "Completed";
   createdAt: string;
+  role?: "owner" | "member";
+  ownerName?: string | null;
 };
 
 type Task = {
@@ -23,11 +25,22 @@ type Task = {
   description: string;
   status: "To Do" | "In Progress" | "Completed";
   projectId: number;
+  priority?: string;
+  assigneeId?: string | null;
+  assignee?: {
+    id: string;
+    name: string;
+  } | null;
   project?: {
     id: number;
     name: string;
   };
   createdAt: string;
+};
+
+type Person = {
+  id: string;
+  name: string;
 };
 
 export default function ProjectDetailsPage() {
@@ -40,6 +53,7 @@ export default function ProjectDetailsPage() {
 
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -108,6 +122,25 @@ export default function ProjectDetailsPage() {
       setTasks(
         tasksData.filter((task) => task.projectId === projectId)
       );
+
+      // Who tasks can be assigned to. Assignment is optional, so a failure here is not fatal.
+      try {
+        const teamResponse = await fetch("/api/team", {
+          cache: "no-store",
+        });
+
+        if (teamResponse.ok) {
+          const teamData: {
+            projects: { id: number; people: Person[] }[];
+          } = await teamResponse.json();
+
+          setPeople(
+            teamData.projects.find((item) => item.id === projectId)?.people ?? []
+          );
+        }
+      } catch (teamError) {
+        console.error("Error loading team:", teamError);
+      }
     } catch (error) {
       console.error("Error loading project:", error);
       setError("Unable to load project.");
@@ -168,6 +201,7 @@ export default function ProjectDetailsPage() {
             title: taskTitle,
             description: taskDescription,
             status: taskStatus,
+            priority: editingTask.priority,
             projectId,
           }),
         });
@@ -254,6 +288,7 @@ export default function ProjectDetailsPage() {
           title: task.title,
           description: task.description,
           status,
+          priority: task.priority,
           projectId,
         }),
       });
@@ -276,12 +311,48 @@ export default function ProjectDetailsPage() {
     }
   }
 
+  async function assignTask(task: Task, assigneeId: string) {
+    try {
+      const response = await fetch("/api/tasks", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: task.id,
+          title: task.title,
+          description: task.description,
+          status: task.status,
+          priority: task.priority,
+          projectId,
+          assigneeId: assigneeId || null,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to assign task");
+      }
+
+      const updatedTask: Task = await response.json();
+
+      setTasks((currentTasks) =>
+        currentTasks.map((currentTask) =>
+          currentTask.id === updatedTask.id
+            ? updatedTask
+            : currentTask
+        )
+      );
+    } catch (error) {
+      console.error("Error assigning task:", error);
+    }
+  }
+
   if (isPending || loading) {
     return (
       <div className="min-h-screen bg-gray-100">
         <Sidebar />
 
-        <main className="ml-64 flex min-h-screen items-center justify-center">
+        <main className="flex min-h-screen items-center justify-center lg:ml-64">
           <div className="text-sm text-gray-500">
             Loading project...
           </div>
@@ -295,7 +366,7 @@ export default function ProjectDetailsPage() {
       <div className="min-h-screen bg-gray-100">
         <Sidebar />
 
-        <main className="ml-64 flex min-h-screen items-center justify-center px-6">
+        <main className="flex min-h-screen items-center justify-center px-6 lg:ml-64">
           <div className="text-center">
             <h1 className="text-2xl font-semibold text-gray-900">
               {error || "Project not found"}
@@ -307,7 +378,7 @@ export default function ProjectDetailsPage() {
 
             <button
               onClick={() => router.push("/projects")}
-              className="mt-6 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800"
+              className="mt-6 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700"
             >
               Back to Projects
             </button>
@@ -321,7 +392,7 @@ export default function ProjectDetailsPage() {
     <div className="min-h-screen bg-gray-100">
       <Sidebar />
 
-      <main className="ml-64 min-h-screen px-8 py-8">
+      <main className="min-h-screen px-4 py-5 sm:px-8 sm:py-8 lg:ml-64">
         <div className="mx-auto max-w-7xl">
           {/* Back button */}
           <button
@@ -333,13 +404,18 @@ export default function ProjectDetailsPage() {
           </button>
 
           {/* Project Header */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-7 shadow-sm">
+          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-3xl">
                 <div className="mb-3 flex items-center gap-3">
                   <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-600">
                     Project
                   </span>
+                  {project.role === "member" && (
+                    <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+                      Shared by {project.ownerName ?? "the owner"}
+                    </span>
+                  )}
 
                   <span
                     className={`rounded-full px-3 py-1 text-xs font-medium ${
@@ -352,7 +428,7 @@ export default function ProjectDetailsPage() {
                   </span>
                 </div>
 
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+                <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
                   {project.name}
                 </h1>
 
@@ -363,7 +439,7 @@ export default function ProjectDetailsPage() {
 
               <button
                 onClick={openCreateTaskModal}
-                className="shrink-0 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-800"
+                className="shrink-0 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
               >
                 + New Task
               </button>
@@ -473,7 +549,7 @@ export default function ProjectDetailsPage() {
 
                 <button
                   onClick={openCreateTaskModal}
-                  className="mt-5 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-800"
+                  className="mt-5 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
                 >
                   + Create Task
                 </button>
@@ -511,6 +587,25 @@ export default function ProjectDetailsPage() {
                       </div>
 
                       <div className="flex shrink-0 flex-wrap items-center gap-2">
+                        {people.length > 1 && (
+                          <select
+                            value={task.assigneeId ?? ""}
+                            onChange={(event) =>
+                              assignTask(task, event.target.value)
+                            }
+                            aria-label={`Assign "${task.title}"`}
+                            className="max-w-40 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-700 outline-none focus:border-blue-500"
+                          >
+                            <option value="">Unassigned</option>
+                            {people.map((person) => (
+                              <option key={person.id} value={person.id}>
+                                {person.id === session?.user?.id
+                                  ? `${person.name} (you)`
+                                  : person.name}
+                              </option>
+                            ))}
+                          </select>
+                        )}
                         <select
                           value={task.status}
                           onChange={(event) =>
@@ -573,7 +668,7 @@ export default function ProjectDetailsPage() {
       {/* Task Modal */}
       {showTaskModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl">
+          <div className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-2xl border border-gray-200 bg-white p-5 shadow-2xl sm:p-6">
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">
@@ -664,7 +759,7 @@ export default function ProjectDetailsPage() {
               )}
             </div>
 
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
               <button
                 onClick={closeTaskModal}
                 className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:border-gray-400 hover:bg-gray-50 hover:text-gray-900"
@@ -675,7 +770,7 @@ export default function ProjectDetailsPage() {
               <button
                 onClick={saveTask}
                 disabled={!taskTitle.trim()}
-                className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {editingTask
                   ? "Save Changes"

@@ -221,7 +221,7 @@ return ( <div className="rounded-xl border border-blue-200 bg-gradient-to-br fro
     </div>
   )}
 
-  <div className="mt-4 flex justify-end gap-3">
+  <div className="mt-4 flex flex-wrap justify-end gap-3">
   {plan && (
     <button
       type="button"

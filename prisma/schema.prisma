@@ -18,6 +18,9 @@ model User {
   projects      Project[]
   accounts      Account[]
   sessions      Session[]
+  memberships   ProjectMember[]
+  assignedTasks Task[]          @relation("TaskAssignee")
+  invitesSent   ProjectInvite[]
 
   @@map("user")
 }
@@ -80,6 +83,8 @@ model Project {
   user        User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
   documents   ProjectDocument[]
   tasks       Task[]
+  members     ProjectMember[]
+  invites     ProjectInvite[]
 
   @@index([userId])
 }
@@ -93,6 +98,8 @@ model Task {
   createdAt    DateTime         @default(now())
   projectId    Int
   parentTaskId Int?
+  assigneeId   String?
+  assignee     User?            @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
   parentTask   Task?            @relation("TaskSubtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
   subtasks     Task[]           @relation("TaskSubtasks")
   project      Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -101,6 +108,7 @@ model Task {
 
   @@index([projectId])
   @@index([parentTaskId])
+  @@index([assigneeId])
 }
 
 model TaskDependency {
@@ -124,4 +132,34 @@ model ProjectDocument {
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
+}
+
+// People who were given access to someone else's project.
+// The project owner is Project.userId and is not stored here.
+model ProjectMember {
+  id        Int      @id @default(autoincrement())
+  projectId Int
+  userId    String
+  role      String   @default("member")
+  createdAt DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([userId])
+}
+
+// An invitation for an email address that has no account yet.
+// It turns into a ProjectMember the first time that person signs in.
+model ProjectInvite {
+  id          Int      @id @default(autoincrement())
+  email       String
+  projectId   Int
+  invitedById String
+  createdAt   DateTime @default(now())
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  invitedBy   User     @relation(fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, email])
+  @@index([email])
 }

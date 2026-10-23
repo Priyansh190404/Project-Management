@@ -46,7 +46,21 @@ type Task = {
   project?: Project;
   subtasks?: Subtask[];
   dependencies?: Dependency[];
+  assigneeId?: string | null;
+  assignee?: {
+    id: string;
+    name: string;
+  } | null;
   createdAt: string;
+};
+
+type TeamProject = {
+  id: number;
+  people: {
+    id: string;
+    name: string;
+    role: string;
+  }[];
 };
 
 export default function TasksPage() {
@@ -66,6 +80,8 @@ export default function TasksPage() {
   const [projectId, setProjectId] = useState("");
   const [status, setStatus] = useState("To Do");
   const [priority, setPriority] = useState("Medium");
+  const [assigneeId, setAssigneeId] = useState("");
+  const [teamProjects, setTeamProjects] = useState<TeamProject[]>([]);
 
   const [editingTask, setEditingTask] =
     useState<Task | null>(null);
@@ -155,6 +171,20 @@ const [addingDependency, setAddingDependency] = useState(false);
         await tasksResponse.json();
 
       setTasks(tasksData);
+
+      // People you can assign tasks to. The page still works without it.
+      try {
+        const teamResponse = await fetch("/api/team", {
+          cache: "no-store",
+        });
+
+        if (teamResponse.ok) {
+          const teamData = await teamResponse.json();
+          setTeamProjects(teamData.projects);
+        }
+      } catch (teamError) {
+        console.error("Error loading team:", teamError);
+      }
     } catch (error) {
       console.error(
         "Error loading tasks:",
@@ -171,7 +201,14 @@ const [addingDependency, setAddingDependency] = useState(false);
     setProjectId("");
     setStatus("To Do");
     setPriority("Medium");
+    setAssigneeId("");
     setEditingTask(null);
+  }
+
+  function peopleForProject(id: string) {
+    return (
+      teamProjects.find((project) => String(project.id) === id)?.people ?? []
+    );
   }
 
   function openCreateModal() {
@@ -186,6 +223,7 @@ const [addingDependency, setAddingDependency] = useState(false);
     setProjectId(String(task.projectId));
     setStatus(task.status);
     setPriority(task.priority || "Medium");
+    setAssigneeId(task.assigneeId ?? "");
     setShowModal(true);
   }
 
@@ -218,6 +256,7 @@ const [addingDependency, setAddingDependency] = useState(false);
             description,
             projectId: Number(projectId),
             priority,
+            assigneeId: assigneeId || null,
           }),
         }
       );
@@ -291,6 +330,7 @@ const [addingDependency, setAddingDependency] = useState(false);
             status,
             priority,
             projectId: Number(projectId),
+            assigneeId: assigneeId || null,
           }),
         }
       );
@@ -906,9 +946,9 @@ async function removeDependency(dependsOnId: number) {
     <main className="min-h-screen bg-gray-100">
       <Sidebar />
 
-      <div className="ml-64 min-h-screen">
+      <div className="min-h-screen lg:ml-64">
         {/* Header */}
-        <header className="flex items-center justify-between border-b bg-white px-8 py-5">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b bg-white px-4 py-4 sm:px-8 sm:py-5">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
               Tasks
@@ -921,14 +961,14 @@ async function removeDependency(dependsOnId: number) {
 
           <button
             onClick={openCreateModal}
-            className="rounded-lg bg-gray-900 px-5 py-3 font-semibold text-white hover:bg-gray-800"
+            className="rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700"
           >
             + New Task
           </button>
         </header>
 
         {/* Search and Filters */}
-        <section className="border-b bg-white px-10 py-5">
+        <section className="border-b bg-white px-4 py-4 sm:px-10 sm:py-5">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             {/* Search */}
             <div className="relative w-full md:max-w-md">
@@ -1044,13 +1084,13 @@ async function removeDependency(dependsOnId: number) {
         </section>
 
         {/* Tasks */}
-        <section className="p-10">
+        <section className="p-4 sm:p-6 lg:p-10">
           {loading ? (
             <p className="text-gray-500">
               Loading tasks...
             </p>
           ) : tasks.length === 0 ? (
-            <div className="rounded-xl bg-white p-10 text-center shadow-sm">
+            <div className="rounded-xl bg-white p-6 text-center shadow-sm sm:p-10">
               <h2 className="text-xl font-semibold text-gray-900">
                 No tasks yet
               </h2>
@@ -1062,13 +1102,13 @@ async function removeDependency(dependsOnId: number) {
 
               <button
                 onClick={openCreateModal}
-                className="mt-5 rounded-lg bg-gray-900 px-5 py-3 font-semibold text-white hover:bg-gray-800"
+                className="mt-5 rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700"
               >
                 + Create Task
               </button>
             </div>
           ) : filteredTasks.length === 0 ? (
-            <div className="rounded-xl bg-white p-10 text-center shadow-sm">
+            <div className="rounded-xl bg-white p-6 text-center shadow-sm sm:p-10">
               <h2 className="text-xl font-semibold text-gray-900">
                 No matching tasks
               </h2>
@@ -1092,7 +1132,7 @@ async function removeDependency(dependsOnId: number) {
           ) : (
             <div>
               {/* Selection Controls */}
-              <div className="mb-6 flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
                 {!selectionMode ? (
                   <button
                     onClick={enterSelectionMode}
@@ -1273,6 +1313,17 @@ async function removeDependency(dependsOnId: number) {
                                   )}
                                 </div>
 
+                                {/* Assignee */}
+                                {task.assignee && (
+                                  <p className="mt-3 text-sm text-gray-500">
+                                    Assigned to{" "}
+                                    <span className="font-medium text-gray-700">
+                                      {task.assignee.id === session?.user?.id
+                                        ? "you"
+                                        : task.assignee.name}
+                                    </span>
+                                  </p>
+                                )}
                                 {/* Description */}
                                 <p className="mt-3 line-clamp-3 text-gray-600">
                                   {task.description ||
@@ -1309,7 +1360,7 @@ async function removeDependency(dependsOnId: number) {
                                         task
                                       )
                                     }
-                                    className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
                                   >
                                     Edit
                                   </button>
@@ -1330,7 +1381,7 @@ async function removeDependency(dependsOnId: number) {
         {/* Create / Edit Task Modal */}
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="w-full max-w-2xl rounded-xl bg-white p-8 shadow-xl">
+            <div className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-5 shadow-xl sm:p-8">
               {/* Modal Header */}
               <div className="flex items-center justify-between">
                 <h2 className="text-3xl font-bold text-gray-900">
@@ -1392,11 +1443,12 @@ async function removeDependency(dependsOnId: number) {
 
                   <select
                     value={projectId}
-                    onChange={(e) =>
+                    onChange={(e) => {
                       setProjectId(
                         e.target.value
-                      )
-                    }
+                      );
+                      setAssigneeId("");
+                    }}
                     className="w-full rounded-lg border border-gray-300 px-4 py-4 text-lg outline-none focus:border-blue-500"
                   >
                     <option value="">
@@ -1421,6 +1473,44 @@ async function removeDependency(dependsOnId: number) {
                   )}
                 </div>
 
+                {/* Assignee */}
+                <div>
+                  <label className="mb-2 block text-lg font-medium text-gray-700">
+                    Assigned to
+                  </label>
+                  <select
+                    value={assigneeId}
+                    onChange={(e) =>
+                      setAssigneeId(e.target.value)
+                    }
+                    disabled={!projectId}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-4 text-lg outline-none focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
+                  >
+                    <option value="">
+                      Unassigned
+                    </option>
+                    {peopleForProject(projectId).map(
+                      (person) => (
+                        <option
+                          key={person.id}
+                          value={person.id}
+                        >
+                          {person.name}
+                          {person.id === session?.user?.id
+                            ? " (you)"
+                            : ""}
+                        </option>
+                      )
+                    )}
+                  </select>
+                  {projectId &&
+                    peopleForProject(projectId).length <= 1 && (
+                      <p className="mt-2 text-sm text-gray-500">
+                        Invite people from the Team page to assign
+                        them tasks.
+                      </p>
+                    )}
+                </div>
                 {/* Priority */}
                 <div>
                   <label className="mb-2 block text-lg font-medium text-gray-700">
@@ -1508,7 +1598,7 @@ async function removeDependency(dependsOnId: number) {
 
         {breakdownTask && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
-            <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+            <div className="max-h-[90dvh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
               {/* Modal Header */}
               <div className="border-b px-6 py-5">
                 <div className="flex items-start justify-between gap-4">
@@ -1733,7 +1823,7 @@ async function removeDependency(dependsOnId: number) {
 
         {viewingTask && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+            <div className="max-h-[90dvh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
               {/* Header */}
               <div className="flex items-start justify-between gap-4 border-b px-6 py-5">
                 <div>
@@ -1780,6 +1870,11 @@ async function removeDependency(dependsOnId: number) {
                     {viewingTask.project?.name ||
                       "Unknown Project"}
                   </span>
+                  <span className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700">
+                    {viewingTask.assignee
+                      ? `Assigned to ${viewingTask.assignee.name}`
+                      : "Unassigned"}
+                  </span>
                 </div>
 
                 {/* Dependencies */}
@@ -1802,9 +1897,9 @@ async function removeDependency(dependsOnId: number) {
       viewingTask.dependencies.map((dependency) => (
         <div
           key={dependency.dependsOn.id}
-          className="flex items-center justify-between rounded-lg border bg-gray-50 px-4 py-3"
+          className="flex items-center justify-between gap-3 rounded-lg border bg-gray-50 px-4 py-3"
         >
-          <div>
+          <div className="min-w-0">
             <p className="font-medium text-gray-900">
               {dependency.dependsOn.title}
             </p>
@@ -1819,7 +1914,7 @@ async function removeDependency(dependsOnId: number) {
             onClick={() =>
               removeDependency(dependency.dependsOn.id)
             }
-            className="text-sm font-medium text-red-600 hover:text-red-700"
+            className="shrink-0 text-sm font-medium text-red-600 hover:text-red-700"
           >
             Remove
           </button>
@@ -1865,7 +1960,7 @@ async function removeDependency(dependsOnId: number) {
       type="button"
       onClick={addDependency}
       disabled={!dependencyTaskId || addingDependency}
-      className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
     >
       {addingDependency ? "Adding..." : "Add"}
     </button>
@@ -1942,7 +2037,7 @@ async function removeDependency(dependsOnId: number) {
                   onClick={() =>
                     setViewingTask(null)
                   }
-                  className="rounded-lg bg-gray-900 px-5 py-3 font-semibold text-white hover:bg-gray-800"
+                  className="rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700"
                 >
                   Close
                 </button>

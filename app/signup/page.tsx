@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { authClient } from "@/app/lib/auth-client";
+import AuthShell, {
+  authButtonClass,
+  authErrorClass,
+  authInputClass,
+  authLabelClass,
+} from "@/app/components/AuthShell";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -32,7 +39,7 @@ export default function SignUpPage() {
         return;
       }
 
-      router.push("/");
+      router.push("/welcome");
     } catch (err) {
       console.error(err);
       setError("Something went wrong. Please try again.");
@@ -42,88 +49,84 @@ export default function SignUpPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-100 p-6">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
-        <h1 className="text-3xl font-bold text-gray-900">
-          Create your account
-        </h1>
-
-        <p className="mt-2 text-gray-500">
-          Start managing your projects with TaskFlow.
-        </p>
-
-        <form onSubmit={handleSignUp} className="mt-8 space-y-5">
-          <div>
-            <label className="mb-2 block font-medium text-gray-700">
-              Name
-            </label>
-
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-              required
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block font-medium text-gray-700">
-              Email
-            </label>
-
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block font-medium text-gray-700">
-              Password
-            </label>
-
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Minimum 8 characters"
-              required
-              minLength={8}
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
-            />
-          </div>
-
-          {error && (
-            <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-              {error}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-gray-900 py-3 font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? "Creating account..." : "Create Account"}
-          </button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-gray-500">
+    <AuthShell
+      title="Create your account"
+      subtitle="Start managing your projects with TaskFlow."
+      footer={
+        <>
           Already have an account?{" "}
-          <button
-            onClick={() => router.push("/sign-in")}
-            className="font-semibold text-blue-600 hover:underline"
+          <Link
+            href="/sign-in"
+            className="font-medium text-blue-400 hover:text-blue-300"
           >
             Sign in
-          </button>
-        </p>
-      </div>
-    </main>
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSignUp} className="space-y-5">
+        <div>
+          <label htmlFor="name" className={authLabelClass}>
+            Name
+          </label>
+
+          <input
+            id="name"
+            type="text"
+            autoComplete="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name"
+            required
+            className={authInputClass}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="email" className={authLabelClass}>
+            Email
+          </label>
+
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            required
+            className={authInputClass}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="password" className={authLabelClass}>
+            Password
+          </label>
+
+          <input
+            id="password"
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Minimum 8 characters"
+            required
+            minLength={8}
+            className={authInputClass}
+          />
+        </div>
+
+        {error && (
+          <p role="alert" className={authErrorClass}>
+            {error}
+          </p>
+        )}
+
+        <button type="submit" disabled={loading} className={authButtonClass}>
+          {loading ? "Creating account..." : "Create account"}
+        </button>
+      </form>
+    </AuthShell>
   );
 }

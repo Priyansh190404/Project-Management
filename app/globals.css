@@ -1,26 +1,150 @@
 @import "tailwindcss";
 
+/*
+  TaskFlow theme
+  ---------------------------------------------------------------
+  One place to change how the whole app looks. Every page and
+  component already uses Tailwind's gray / slate / blue / purple /
+  emerald utilities, so re-defining those scales below re-themes all
+  modules at once:
+
+    gray, slate  -> cool "ink" neutrals (surfaces, text, sidebar)
+    blue         -> marine, the primary action colour
+    purple       -> iris, reserved for AI features
+    emerald      -> marine (documents share the primary colour)
+
+  red / green / yellow are left alone on purpose: they carry meaning
+  (errors, success, priority) and should look the same everywhere.
+*/
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --background: #eef1f5;
+  --foreground: #141c29;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@theme {
+  /* Neutrals: cool, slightly blue so cards, borders and text agree with the ink sidebar */
+  --color-gray-50: #f6f8fa;
+  --color-gray-100: #eef1f5;
+  --color-gray-200: #e1e6ed;
+  --color-gray-300: #cbd3de;
+  --color-gray-400: #98a4b5;
+  --color-gray-500: #6b7889;
+  --color-gray-600: #4f5b6c;
+  --color-gray-700: #3a4554;
+  --color-gray-800: #263040;
+  --color-gray-900: #141c29;
+  --color-gray-950: #0b111b;
+
+  /* Ink: sidebar, sign-in and welcome screens */
+  --color-slate-50: #f6f8fa;
+  --color-slate-100: #eef1f5;
+  --color-slate-200: #dde4ee;
+  --color-slate-300: #c2ccdb;
+  --color-slate-400: #8e9cb1;
+  --color-slate-500: #67768d;
+  --color-slate-600: #4a576b;
+  --color-slate-700: #323d50;
+  --color-slate-800: #1f2938;
+  --color-slate-900: #141c29;
+  --color-slate-950: #0c121c;
+
+  /* Marine: primary colour (links, focus, progress, "In Progress") */
+  --color-blue-50: #eef7fb;
+  --color-blue-100: #d6ecf5;
+  --color-blue-200: #afd9ea;
+  --color-blue-300: #7bbfdb;
+  --color-blue-400: #3fa0c8;
+  --color-blue-500: #1a83b0;
+  --color-blue-600: #0f6b94;
+  --color-blue-700: #0c5779;
+  --color-blue-800: #0d4660;
+  --color-blue-900: #0e3a50;
+  --color-blue-950: #08222f;
+
+  /* Iris: everything AI-powered */
+  --color-purple-50: #f3f1fe;
+  --color-purple-100: #e7e3fd;
+  --color-purple-200: #d0c8fa;
+  --color-purple-300: #b1a4f4;
+  --color-purple-400: #8f7ceb;
+  --color-purple-500: #7059e0;
+  --color-purple-600: #5b43cc;
+  --color-purple-700: #4a35ab;
+  --color-purple-800: #3c2d87;
+  --color-purple-900: #302568;
+  --color-purple-950: #1d1640;
+
+  /* Documents module follows the primary colour */
+  --color-emerald-50: var(--color-blue-50);
+  --color-emerald-200: var(--color-blue-200);
+  --color-emerald-500: var(--color-blue-500);
+  --color-emerald-600: var(--color-blue-600);
+  --color-emerald-700: var(--color-blue-700);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 5rem;
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+
+  /* Keyboard focus that is always visible and always the same colour */
+  :where(a, button, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-blue-500);
+    outline-offset: 2px;
+  }
+
+  :where(input, select, textarea):focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-blue-500) 22%, transparent);
+  }
+
+  button:not(:disabled),
+  [role="button"] {
+    cursor: pointer;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Unlayered on purpose so it beats text-sm on fields: 16px inputs stop iOS Safari
+   from zooming the page when a field is focused */
+@media (max-width: 639px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

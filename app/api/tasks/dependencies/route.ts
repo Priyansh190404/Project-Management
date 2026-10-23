@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "../../../lib/auth";
 import { prisma } from "../../../lib/prisma";
+import { accessibleProject } from "../../../lib/access";
 
 async function getSession(request: Request) {
   return await auth.api.getSession({
@@ -82,9 +83,7 @@ export async function POST(request: Request) {
         id: {
           in: [taskId, dependsOnId],
         },
-        project: {
-          userId: session.user.id,
-        },
+        project: accessibleProject(session.user.id),
       },
       select: {
         id: true,
@@ -216,9 +215,7 @@ export async function DELETE(request: Request) {
           taskId,
           dependsOnId,
           task: {
-            project: {
-              userId: session.user.id,
-            },
+            project: accessibleProject(session.user.id),
           },
         },
       });

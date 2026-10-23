@@ -18,4 +18,11 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+
+  // Lets people delete their own account from Settings (they must confirm with their password)
+  user: {
+    deleteUser: {
+      enabled: true,
+    },
+  },
 });

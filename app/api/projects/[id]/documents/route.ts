@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "../../../../lib/auth";
 import { prisma } from "../../../../lib/prisma";
+import { accessibleProject } from "../../../../lib/access";
 
 type RouteContext = {
   params: Promise<{
@@ -37,7 +38,7 @@ export async function POST(
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
-        userId: session.user.id,
+        ...accessibleProject(session.user.id),
       },
     });
 
@@ -135,7 +136,7 @@ export async function GET(
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
-        userId: session.user.id,
+        ...accessibleProject(session.user.id),
       },
     });
 

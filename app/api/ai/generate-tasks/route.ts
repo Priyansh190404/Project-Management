@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { GoogleGenAI, Type } from "@google/genai";
 import { auth } from "../../../lib/auth";
 import { prisma } from "../../../lib/prisma";
+import { accessibleProject } from "../../../lib/access";
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -61,7 +62,7 @@ export async function POST(request: Request) {
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
-        userId: session.user.id,
+        ...accessibleProject(session.user.id),
       },
     });
 

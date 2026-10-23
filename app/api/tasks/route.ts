@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
+import { accessibleProject } from "../../lib/access";
 
 async function getSession(request: Request) {
   return await auth.api.getSession({
@@ -42,6 +43,30 @@ async function updateProjectProgress(projectId: number) {
   return progress;
 }
 
+// A task can only be assigned to someone who owns or belongs to its project.
+async function resolveAssignee(
+  assigneeId: unknown,
+  projectId: number
+): Promise<{ ok: true; value: string | null } | { ok: false }> {
+  if (assigneeId === null || assigneeId === "") {
+    return { ok: true, value: null };
+  }
+
+  if (typeof assigneeId !== "string") {
+    return { ok: false };
+  }
+
+  const project = await prisma.project.findFirst({
+    where: {
+      id: projectId,
+      ...accessibleProject(assigneeId),
+    },
+    select: { id: true },
+  });
+
+  return project ? { ok: true, value: assigneeId } : { ok: false };
+}
+
 export async function GET(request: Request) {
   try {
     const session = await getSession(request);
@@ -55,9 +80,7 @@ export async function GET(request: Request) {
 
     const tasks = await prisma.task.findMany({
       where: {
-        project: {
-          userId: session.user.id,
-        },
+        project: accessibleProject(session.user.id),
         parentTaskId: null,
       },
       orderBy: {
@@ -65,6 +88,12 @@ export async function GET(request: Request) {
       },
     include: {
   project: true,
+  assignee: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
   subtasks: {
     orderBy: {
       createdAt: "asc",
@@ -114,6 +143,7 @@ export async function POST(request: Request) {
       projectId,
       priority,
       parentTaskId,
+      assigneeId,
     } = body;
 
     if (!title?.trim()) {
@@ -133,7 +163,7 @@ export async function POST(request: Request) {
     const project = await prisma.project.findFirst({
       where: {
         id: Number(projectId),
-        userId: session.user.id,
+        ...accessibleProject(session.user.id),
       },
     });
 
@@ -152,9 +182,7 @@ export async function POST(request: Request) {
           id: Number(parentTaskId),
           projectId: Number(projectId),
           parentTaskId: null,
-          project: {
-            userId: session.user.id,
-          },
+          project: accessibleProject(session.user.id),
         },
       });
 
@@ -171,8 +199,27 @@ export async function POST(request: Request) {
       validParentTaskId = Number(parentTaskId);
     }
 
+    let assigneeValue: string | null = null;
+
+    if (assigneeId !== undefined) {
+      const resolved = await resolveAssignee(
+        assigneeId,
+        Number(projectId)
+      );
+
+      if (!resolved.ok) {
+        return NextResponse.json(
+          { error: "Assignee must be a member of this project." },
+          { status: 400 }
+        );
+      }
+
+      assigneeValue = resolved.value;
+    }
+
     const task = await prisma.task.create({
       data: {
+        assigneeId: assigneeValue,
         title: title.trim(),
         description:
           description?.trim() || "No description provided.",
@@ -182,6 +229,12 @@ export async function POST(request: Request) {
       },
       include: {
         project: true,
+        assignee: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         subtasks: true,
       },
     });
@@ -222,6 +275,7 @@ export async function PUT(request: Request) {
       status,
       priority,
       projectId,
+      assigneeId,
     } = body;
 
     if (!id) {
@@ -248,9 +302,7 @@ export async function PUT(request: Request) {
     const existingTask = await prisma.task.findFirst({
       where: {
         id: Number(id),
-        project: {
-          userId: session.user.id,
-        },
+        project: accessibleProject(session.user.id),
       },
     });
 
@@ -264,7 +316,7 @@ export async function PUT(request: Request) {
     const project = await prisma.project.findFirst({
       where: {
         id: Number(projectId),
-        userId: session.user.id,
+        ...accessibleProject(session.user.id),
       },
     });
 
@@ -292,11 +344,41 @@ export async function PUT(request: Request) {
       );
     }
 
+    // Only touch the assignee when the caller sent one, so older callers
+    // (like the status dropdown) never clear it by accident.
+    let assigneeUpdate: { assigneeId: string | null } | undefined;
+
+    if (assigneeId !== undefined) {
+      const resolved = await resolveAssignee(assigneeId, newProjectId);
+
+      if (!resolved.ok) {
+        return NextResponse.json(
+          { error: "Assignee must be a member of this project." },
+          { status: 400 }
+        );
+      }
+
+      assigneeUpdate = { assigneeId: resolved.value };
+    } else if (
+      oldProjectId !== newProjectId &&
+      existingTask.assigneeId
+    ) {
+      const stillAllowed = await resolveAssignee(
+        existingTask.assigneeId,
+        newProjectId
+      );
+
+      if (!stillAllowed.ok) {
+        assigneeUpdate = { assigneeId: null };
+      }
+    }
+
     const task = await prisma.task.update({
       where: {
         id: Number(id),
       },
       data: {
+        ...assigneeUpdate,
         title: title.trim(),
         description:
           description?.trim() || "No description provided.",
@@ -306,6 +388,12 @@ export async function PUT(request: Request) {
       },
       include: {
         project: true,
+        assignee: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         subtasks: true,
       },
     });
@@ -353,9 +441,7 @@ export async function DELETE(request: Request) {
     const existingTask = await prisma.task.findFirst({
       where: {
         id: Number(id),
-        project: {
-          userId: session.user.id,
-        },
+        project: accessibleProject(session.user.id),
       },
     });
 

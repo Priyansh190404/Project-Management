@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
+import { accessibleProject, claimPendingInvites } from "../../lib/access";
 
 async function getSession(request: Request) {
   return await auth.api.getSession({
@@ -19,16 +20,34 @@ export async function GET(request: Request) {
       );
     }
 
+    // Anyone invited by email before they had an account joins on their first request
+    await claimPendingInvites({
+      id: session.user.id,
+      email: session.user.email,
+    });
+
     const projects = await prisma.project.findMany({
-      where: {
-        userId: session.user.id,
-      },
+      where: accessibleProject(session.user.id),
       orderBy: {
         createdAt: "desc",
       },
+      include: {
+        user: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
 
-    return NextResponse.json(projects);
+    // "owner" can edit or delete the project; "member" can work on its tasks and documents
+    return NextResponse.json(
+      projects.map(({ user, ...project }) => ({
+        ...project,
+        role: project.userId === session.user.id ? "owner" : "member",
+        ownerName: user?.name ?? null,
+      }))
+    );
   } catch (error) {
     console.error("Failed to fetch projects:", error);
 
